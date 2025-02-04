@@ -1,4 +1,4 @@
-include .env
+include .env.local
 
 run: 
 	@go run main.go
