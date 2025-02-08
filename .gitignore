@@ -23,6 +23,7 @@ go.work
 go.work.sum
 
 # env file
+.env
 .env.local
 
 service-account-key.json
@@ -31,3 +32,7 @@ objects/
 app/uploads/
 
 bin/app
+
+uploads/*
+
+.env

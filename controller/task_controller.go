@@ -4,11 +4,14 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"mime/multipart"
 	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strconv"
+	"strings"
+	"sync"
 
 	"github.com/Soup666/diss-api/database"
 	"github.com/Soup666/diss-api/model"
@@ -129,6 +132,19 @@ func (c *TaskController) CreateTask(ctx *gin.Context) {
 	ctx.JSON(http.StatusCreated, gin.H{"task": createdTask})
 }
 
+// UploadFileToTask handles file uploads for a task
+// @Summary Upload files to a task
+// @Description Uploads files to a task
+// @Tags tasks
+// @Accept json
+// @Produce json
+// @Param Authorization header string true "Bearer Token"
+// @Param request body CreateTaskRequest true "Task data"
+// @Success 201 {object} map[string]string
+// @Failure 400 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /tasks [post]
 func (c *TaskController) UploadFileToTask(ctx *gin.Context) {
 
 	// Get the Task ID from the route
@@ -158,33 +174,72 @@ func (c *TaskController) UploadFileToTask(ctx *gin.Context) {
 		return
 	}
 
-	var uploadedImages []model.AppFile
+	// Define the upload folder
 	folderPath := fmt.Sprintf("uploads/task-%d", taskID)
-	os.MkdirAll(folderPath, os.ModePerm)
+	if err := os.MkdirAll(folderPath, os.ModePerm); err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create upload directory"})
+		return
+	}
+
+	var uploadedImages []model.AppFile
+	var wg sync.WaitGroup
+	var mu sync.Mutex
+	var hasError bool
+
+	// Use transactions for better consistency
+	tx := database.DB.Begin()
 
 	for index, file := range files {
+		wg.Add(1)
+		go func(index int, file *multipart.FileHeader) {
+			defer wg.Done()
 
-		// Generate a unique filename based on the Task ID
-		fileType := filepath.Ext(file.Filename)
-		filename := fmt.Sprintf("task-%d-%d%s", taskID, index, fileType)
-		savePath := filepath.Join(folderPath, filename)
+			// Validate file extension
+			fileExt := strings.ToLower(filepath.Ext(file.Filename))
+			if fileExt != ".jpg" && fileExt != ".jpeg" && fileExt != ".png" {
+				ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid file type"})
+				hasError = true
+				return
+			}
 
-		// Save the file to disk
-		if err := ctx.SaveUploadedFile(file, savePath); err != nil {
-			ctx.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to save file %s", file.Filename)})
-			return
-		}
+			// Generate a unique filename
+			filename := fmt.Sprintf("task-%d-%d%s", taskID, index, fileExt)
+			savePath := filepath.Join(folderPath, filename)
 
-		// Save metadata to the database
-		image := model.AppFile{
-			Filename: filename,
-			Url:      fmt.Sprintf("/uploads/%d/%s", taskID, filename),
-			TaskID:   uint(taskID),
-			FileType: "upload",
-		}
-		database.DB.Create(&image)
-		uploadedImages = append(uploadedImages, image)
+			// Save the file
+			if err := ctx.SaveUploadedFile(file, savePath); err != nil {
+				ctx.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to save file %s", file.Filename)})
+				hasError = true
+				return
+			}
+
+			// Save metadata to DB
+			image := model.AppFile{
+				Filename: filename,
+				Url:      fmt.Sprintf("/uploads/task-%d/%s", taskID, filename),
+				TaskID:   uint(taskID),
+				FileType: "upload",
+			}
+
+			mu.Lock()
+			if err := tx.Create(&image).Error; err != nil {
+				hasError = true
+			} else {
+				uploadedImages = append(uploadedImages, image)
+			}
+			mu.Unlock()
+		}(index, file)
 	}
+
+	wg.Wait()
+
+	if hasError {
+		tx.Rollback()
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to upload some files"})
+		return
+	}
+
+	tx.Commit()
 
 	ctx.JSON(http.StatusOK, gin.H{
 		"message": "Files uploaded successfully",

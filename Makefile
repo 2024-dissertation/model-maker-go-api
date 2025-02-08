@@ -1,6 +1,10 @@
 include .env.local
 
-run: 
+run:
+	@go run main.go
+
+restart:
+	@pkill -f "go run main.go" || true
 	@go run main.go
 
 build:
