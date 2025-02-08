@@ -56,5 +56,8 @@ func main() {
 	r := router.NewRouter(authController, taskController, uploadController, objectController, authService)
 
 	// Start the server
-	r.Run(":" + os.Getenv("PORT"))
+	if r.Run(":"+os.Getenv("PORT")) != nil {
+		panic("[Error] failed to start Gin server due to: " + err.Error())
+	}
+
 }

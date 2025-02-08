@@ -144,7 +144,7 @@ func (c *TaskController) CreateTask(ctx *gin.Context) {
 // @Failure 400 {object} map[string]string
 // @Failure 404 {object} map[string]string
 // @Failure 500 {object} map[string]string
-// @Router /tasks [post]
+// @Router /tasks/{taskID}/upload [post]
 func (c *TaskController) UploadFileToTask(ctx *gin.Context) {
 
 	// Get the Task ID from the route
