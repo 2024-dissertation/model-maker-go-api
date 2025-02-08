@@ -1,14 +1,31 @@
-include .env.local
+include .env
 
-run:
-	@go run main.go
-
-restart:
-	@pkill -f "go run main.go" || true
-	@go run main.go
+.DEFAULT_GOAL := build
+BIN_FILE=main.out
 
 build:
-	@go build -o bin/app .
+	@go build -o "${BIN_FILE}"
+
+clean:
+	go clean
+	rm --force "cp.out"
+	rm --force nohup.out
+
+test:
+	go test
+
+check:
+	go test
+
+cover:
+	go test -coverprofile cp.out
+	go tool cover -html=cp.out
+
+run:
+	./"${BIN_FILE}"
+
+lint:
+	golangci-lint run --enable-all
 
 run-seed:
 	@go run seeder/seeder.go
@@ -22,11 +39,6 @@ up:
 reset:
 	@GOOSE_DRIVER=postgres GOOSE_DBSTRING=$(DATABASE_URL) goose -dir=$(MIGRATION_PATH) reset
 
-test:
-	@go test ./... -coverprofile cover.out
-
-open-test:
-	@go tool cover -html=cover.out
 
 run-test:
 	- make test
