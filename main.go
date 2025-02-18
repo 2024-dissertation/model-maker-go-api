@@ -44,8 +44,8 @@ func main() {
 	// Set up the authentication service
 	authService := services.NewAuthService(authClient, db.DB, userRepo)
 	userService := services.NewUserService(userRepo)
-	taskService := services.NewTaskService(taskRepo)
 	appFileService := services.NewAppFileServiceFile(appFileRepo)
+	taskService := services.NewTaskService(taskRepo, appFileService)
 
 	authController := controller.NewAuthController(authService, userService)
 	taskController := controller.NewTaskController(taskService, appFileService)

@@ -7,12 +7,10 @@ import (
 	"mime/multipart"
 	"net/http"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/Soup666/diss-api/database"
 	"github.com/Soup666/diss-api/model"
@@ -292,142 +290,5 @@ func (c *TaskController) StartProcess(ctx *gin.Context) {
 	// Respond to the client immediately
 	ctx.JSON(http.StatusAccepted, gin.H{"message": "Process started."})
 
-	go c.runPhotogrammetryProcess(ctx, task, database.DB)
-}
-
-func (c *TaskController) runPhotogrammetryProcess(ctx *gin.Context, task *model.Task, db *gorm.DB) {
-	startTime := time.Now()
-
-	inputPath := filepath.Join("uploads", fmt.Sprintf("task-%d", task.ID))
-	outputPath := filepath.Join("objects", fmt.Sprintf("task-%d", task.ID))
-	mvsPath := filepath.Join(outputPath, "mvs")
-
-	db.Model(&task).Update("Status", model.INPROGRESS)
-
-	// Clear the build directory
-	if err := os.RemoveAll(outputPath); err != nil {
-		log.Printf("Failed to clear directory %s: %v", outputPath, err)
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to clear directory"})
-		db.Model(&task).Update("Status", model.FAILED)
-		return
-	}
-
-	if err := os.MkdirAll(outputPath, os.ModePerm); err != nil {
-		log.Printf("Failed to create directory %s: %v", outputPath, err)
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create directory"})
-		db.Model(&task).Update("Status", model.FAILED)
-		return
-	}
-
-	if err := os.MkdirAll(mvsPath, os.ModePerm); err != nil {
-		log.Printf("Failed to create directory %s: %v", mvsPath, err)
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create directory"})
-		db.Model(&task).Update("Status", model.FAILED)
-		return
-	}
-
-	// 1
-	log.Println("# 1 ./bin/SfM_SequentialPipeline.py", inputPath, outputPath, "--opensfm-processes", "8")
-	cmd := exec.Command("./bin/SfM_SequentialPipeline.py", inputPath, outputPath, "--opensfm-processes", "8")
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	err := cmd.Run()
-
-	if err != nil {
-		log.Println("SfM_SequentialPipeline failed:", err)
-		db.Model(&task).Update("Status", model.FAILED)
-		return
-	}
-
-	// 2
-	log.Println("# 2 openMVG_main_openMVG2openMVS", "-i", filepath.Join(outputPath, "reconstruction_sequential/sfm_data.bin"), "-o", filepath.Join(mvsPath, "scene.mvs"), inputPath, outputPath)
-	cmd = exec.Command("openMVG_main_openMVG2openMVS", "-i", filepath.Join(outputPath, "reconstruction_sequential/sfm_data.bin"), "-o", filepath.Join(mvsPath, "scene.mvs"), inputPath, outputPath)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	err = cmd.Run()
-
-	if err != nil {
-		log.Println("openMVG_main_openMVG2openMVS failed:", err)
-		db.Model(&task).Update("Status", model.FAILED)
-		return
-	}
-
-	// 3
-	log.Println("# 3 DensifyPointCloud", "scene.mvs", "-o", "scene_dense.mvs", "-w", mvsPath)
-	cmd = exec.Command("DensifyPointCloud", "scene.mvs", "-o", "scene_dense.mvs", "-w", mvsPath)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	err = cmd.Run()
-
-	if err != nil {
-		log.Println("DensifyPointCloud failed:", err)
-		db.Model(&task).Update("Status", model.FAILED)
-		return
-	}
-
-	// 4
-	log.Println("# 4 ReconstructMesh", "scene_dense.mvs", "-o", "scene_mesh.ply", "-w", mvsPath)
-	cmd = exec.Command("ReconstructMesh", "scene_dense.mvs", "-o", "scene_mesh.ply", "-w", mvsPath)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	err = cmd.Run()
-
-	if err != nil {
-		log.Println("ReconstructMesh failed:", err)
-		db.Model(&task).Update("Status", model.FAILED)
-		return
-	}
-
-	// 5
-	log.Println("# 5 RefineMesh", "scene.mvs", "-m", "scene_mesh.ply", "-o", "scene_dense_mesh_refine.mvs", "-w", mvsPath, "--scales", "1", "--max-face-area", "16")
-	cmd = exec.Command("RefineMesh", "scene.mvs", "-m", "scene_mesh.ply", "-o", "scene_dense_mesh_refine.mvs", "-w", mvsPath, "--scales", "1", "--max-face-area", "16")
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	err = cmd.Run()
-
-	if err != nil {
-		log.Println("RefineMesh failed:", err)
-		db.Model(&task).Update("Status", model.FAILED)
-		return
-	}
-
-	// 6
-	log.Println("# 5 TextureMesh", "scene_dense.mvs", "-m", "scene_dense_mesh_refine.ply", "-o", "scene_dense_mesh_refine_texture.mvs", "-w", mvsPath)
-	cmd = exec.Command("TextureMesh", "scene_dense.mvs", "-m", "scene_dense_mesh_refine.ply", "-o", "scene_dense_mesh_refine_texture.mvs", "-w", mvsPath)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	err = cmd.Run()
-
-	if err != nil {
-		log.Println("TextureMesh failed:", err)
-		db.Model(&task).Update("Status", model.FAILED)
-		return
-	}
-
-	fileName := "scene_dense_mesh_refine_texture.ply"
-	modelPath := filepath.Join(outputPath, fileName)
-
-	mesh, err := c.AppFileService.Save(&model.AppFile{
-		Url:      modelPath,
-		Filename: fileName,
-		TaskID:   task.ID,
-		FileType: "mesh",
-	})
-
-	if err != nil {
-		log.Printf("Failed to save mesh: %v\n", err)
-		return
-	}
-
-	task.Mesh = mesh
-	task.Completed = true
-	task.Status = model.SUCCESS
-
-	if _, err := c.TaskService.UpdateTask(task); err != nil {
-		log.Printf("Failed to update task: %v\n", err)
-		return
-	}
-
-	log.Println("Task updated successfully.")
-	log.Printf("Processing completed in %s\n", time.Since(startTime))
+	go c.TaskService.RunPhotogrammetryProcess(task)
 }
