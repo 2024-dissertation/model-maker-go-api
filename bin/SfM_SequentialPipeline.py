@@ -1,4 +1,4 @@
-#!/opt/anaconda3/bin/python
+#!/usr/bin/env python
 #! -*- encoding: utf-8 -*-
 
 # This file is part of OpenMVG (Open Multiple View Geometry) C++ library.

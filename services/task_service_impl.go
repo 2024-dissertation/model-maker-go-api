@@ -146,8 +146,8 @@ func (s *TaskServiceImpl) RunPhotogrammetryProcess(task *model.Task) error {
 	}
 
 	// 2
-	log.Println("# 2 openMVG_main_openMVG2openMVS", "-i", filepath.Join(outputPath, "reconstruction_sequential/sfm_data.bin"), "-o", filepath.Join(mvsPath, "scene.mvs"), inputPath, outputPath)
-	cmd = exec.Command("openMVG_main_openMVG2openMVS", "-i", filepath.Join(outputPath, "reconstruction_sequential/sfm_data.bin"), "-o", filepath.Join(mvsPath, "scene.mvs"), inputPath, outputPath)
+	log.Println("# 2 openMVG_main_openMVG2openMVS", "-i", filepath.Join(outputPath, "reconstruction_sequential/sfm_data.bin"), "-o", filepath.Join(mvsPath, "scene.mvs"), inputPath, outputPath, "-d", mvsPath)
+	cmd = exec.Command("openMVG_main_openMVG2openMVS", "-i", filepath.Join(outputPath, "reconstruction_sequential/sfm_data.bin"), "-o", filepath.Join(mvsPath, "scene.mvs"), inputPath, outputPath, "-d", mvsPath)
 	err = cmd.Run()
 
 	if err != nil {
@@ -159,8 +159,6 @@ func (s *TaskServiceImpl) RunPhotogrammetryProcess(task *model.Task) error {
 	// 3
 	log.Println("# 3 DensifyPointCloud", "scene.mvs", "-o", "scene_dense.mvs", "-w", mvsPath)
 	cmd = exec.Command("DensifyPointCloud", "scene.mvs", "-o", "scene_dense.mvs", "-w", mvsPath)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
 	err = cmd.Run()
 
 	if err != nil {
@@ -172,8 +170,6 @@ func (s *TaskServiceImpl) RunPhotogrammetryProcess(task *model.Task) error {
 	// 4
 	log.Println("# 4 ReconstructMesh", "scene_dense.mvs", "-o", "scene_mesh.ply", "-w", mvsPath)
 	cmd = exec.Command("ReconstructMesh", "scene_dense.mvs", "-o", "scene_mesh.ply", "-w", mvsPath)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
 	err = cmd.Run()
 
 	if err != nil {
@@ -185,8 +181,6 @@ func (s *TaskServiceImpl) RunPhotogrammetryProcess(task *model.Task) error {
 	// 5
 	log.Println("# 5 RefineMesh", "scene.mvs", "-m", "scene_mesh.ply", "-o", "scene_dense_mesh_refine.mvs", "-w", mvsPath, "--scales", "1", "--max-face-area", "16")
 	cmd = exec.Command("RefineMesh", "scene.mvs", "-m", "scene_mesh.ply", "-o", "scene_dense_mesh_refine.mvs", "-w", mvsPath, "--scales", "1", "--max-face-area", "16")
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
 	err = cmd.Run()
 
 	if err != nil {
@@ -196,10 +190,8 @@ func (s *TaskServiceImpl) RunPhotogrammetryProcess(task *model.Task) error {
 	}
 
 	// 6
-	log.Println("# 5 TextureMesh", "scene_dense.mvs", "-m", "scene_dense_mesh_refine.ply", "-o", "scene_dense_mesh_refine_texture.mvs", "-w", mvsPath)
+	log.Println("# 6 TextureMesh", "scene_dense.mvs", "-m", "scene_dense_mesh_refine.ply", "-o", "scene_dense_mesh_refine_texture.mvs", "-w", mvsPath)
 	cmd = exec.Command("TextureMesh", "scene_dense.mvs", "-m", "scene_dense_mesh_refine.ply", "-o", "scene_dense_mesh_refine_texture.mvs", "-w", mvsPath)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
 	err = cmd.Run()
 
 	if err != nil {
@@ -208,12 +200,21 @@ func (s *TaskServiceImpl) RunPhotogrammetryProcess(task *model.Task) error {
 		return err
 	}
 
-	fileName := "scene_dense_mesh_refine_texture.ply"
-	modelPath := filepath.Join(outputPath, fileName)
+	// 7
+	fileName := filepath.Join(mvsPath, "final_model")
+
+	cmd = exec.Command("blender", "-b", "-P", "./bin/convert_ply_to_glb.py", "--", filepath.Join(mvsPath, "scene_dense_mesh_refine_texture.ply"), fileName)
+	err = cmd.Run()
+
+	if err != nil {
+		log.Println("MeshConversion failed:", err)
+		s.FailTask(task)
+		return err
+	}
 
 	mesh, err := s.appFileService.Save(&model.AppFile{
-		Url:      modelPath,
-		Filename: fileName,
+		Url:      fileName + ".glb",
+		Filename: "final_model.glb",
 		TaskID:   task.ID,
 		FileType: "mesh",
 	})
