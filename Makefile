@@ -11,6 +11,9 @@ clean:
 	rm --force "cp.out"
 	rm --force nohup.out
 
+run:
+	./"${BIN_FILE}"
+
 test:
 	go test
 
@@ -23,6 +26,9 @@ cover:
 
 run:
 	./"${BIN_FILE}"
+
+doc:
+	swag init
 
 lint:
 	golangci-lint run --enable-all

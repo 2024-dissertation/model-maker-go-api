@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/Soup666/diss-api/database"
 	"github.com/Soup666/diss-api/model"
@@ -97,8 +98,8 @@ type CreateTaskRequest struct {
 // @Tags tasks
 // @Accept json
 // @Produce json
-// @Param Authorization header string true "Bearer Token"
 // @Param request body CreateTaskRequest true "Task data"
+// @Security BearerAuth
 // @Success 201 {object} model.Task
 // @Failure 400 {object} map[string]string
 // @Failure 500 {object} map[string]string
@@ -138,8 +139,9 @@ func (c *TaskController) CreateTask(ctx *gin.Context) {
 // @Tags tasks
 // @Accept json
 // @Produce json
-// @Param Authorization header string true "Bearer Token"
-// @Param request body CreateTaskRequest true "Task data"
+// Security BearerAuth
+// @Param taskID path string true "Task ID"
+// @Param files formData file true "Files to upload"
 // @Success 201 {object} map[string]string
 // @Failure 400 {object} map[string]string
 // @Failure 404 {object} map[string]string
@@ -247,6 +249,20 @@ func (c *TaskController) UploadFileToTask(ctx *gin.Context) {
 	})
 }
 
+// StartProcess handles the process of starting the photogrammetry process
+// @Summary Upload files to a task
+// @Description Uploads files to a task
+// @Tags tasks
+// @Accept json
+// @Produce json
+// @Param Authorization header string true "Bearer Token"
+// @Param request body CreateTaskRequest true "Task data"
+// @Param taskID path string true "Task ID"
+// @Success 201 {object} map[string]string
+// @Failure 400 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /tasks/{taskID}/start [post]
 func (c *TaskController) StartProcess(ctx *gin.Context) {
 
 	taskId := ctx.Param("taskID")
@@ -258,104 +274,91 @@ func (c *TaskController) StartProcess(ctx *gin.Context) {
 
 	task, err := c.TaskService.GetTask(uint(taskIdInt))
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Task not found"})
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			ctx.JSON(http.StatusNotFound, gin.H{"error": "Task not found"})
+		} else {
+			log.Printf("Error retrieving task: %v", err)
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
+		}
 		return
 	}
+
 	task.Completed = false
 	if err := c.TaskService.SaveTask(task); err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update task"})
 		return
 	}
 
-	// Path to the executable
-	executablePath := "./cmd/HelloPhotogrammetry"
-
-	var inputPath string = fmt.Sprintf("uploads/task-%s", taskId)
-	var buildPath string = fmt.Sprintf("objects/task-%s", taskId)
-	var buildFileName string = fmt.Sprintf("baked_mesh_%s.usdz", taskId)
-
-	os.Mkdir(buildPath, os.ModePerm)
-
-	// Create the command
-	cmd := exec.Command(executablePath, inputPath, fmt.Sprintf("%s/%s", buildPath, buildFileName))
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-
-	// Run the command in a goroutine
-	go func() {
-		log.Println("Starting process...")
-		log.Printf("Command: %v\n", cmd)
-
-		// Start the command
-		if err := cmd.Start(); err != nil {
-			log.Printf("Failed to start process: %v\n", err)
-			return
-		}
-
-		// Wait for the command to finish
-		if err := cmd.Wait(); err != nil {
-			log.Printf("Process finished with error: %v\n", err)
-			return
-		}
-
-		log.Println("Process completed successfully.")
-		task.Completed = true
-		if _, err := c.TaskService.UpdateTask(task); err != nil {
-			log.Printf("Failed to update task: %v\n", err)
-			return
-		}
-
-		log.Println("Task updated successfully.")
-
-		var inputPath string = fmt.Sprintf("./objects/task-%d/baked_mesh_%d.usdz", task.ID, task.ID)
-		var buildPath string = fmt.Sprintf("./objects/task-%d/task-%d", task.ID, task.ID)
-
-		executablePath := "./cmd/usda_to_glb.sh"
-		cmd := exec.Command(executablePath, inputPath, buildPath)
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-
-		go func() {
-			log.Println("Starting convertion...")
-			log.Printf("Command: %v\n", cmd)
-
-			// Start the command
-			if err := cmd.Start(); err != nil {
-				log.Printf("Failed to start process: %v\n", err)
-				return
-			}
-
-			// Wait for the command to finish
-			if err := cmd.Wait(); err != nil {
-				log.Printf("Process finished with error: %v\n", err)
-				return
-			}
-
-			log.Println("Process completed successfully.")
-			mesh, err := c.AppFileService.Save(&model.AppFile{
-				Url:      fmt.Sprintf("/objects/%d/task-%d.glb", task.ID, task.ID),
-				Filename: fmt.Sprintf("task-%d.glb", task.ID),
-				TaskID:   task.ID,
-				FileType: "mesh",
-			})
-
-			if err != nil {
-				log.Printf("Failed to save mesh: %v\n", err)
-				return
-			}
-
-			task.Mesh = mesh
-			task.Completed = true
-
-			if _, err := c.TaskService.UpdateTask(task); err != nil {
-				log.Printf("Failed to update task: %v\n", err)
-				return
-			}
-
-			log.Println("Task updated successfully.")
-		}()
-	}()
-
 	// Respond to the client immediately
 	ctx.JSON(http.StatusAccepted, gin.H{"message": "Process started."})
+
+	go c.runPhotogrammetryProcess(ctx, task, database.DB)
+}
+
+func (c *TaskController) runPhotogrammetryProcess(ctx *gin.Context, task *model.Task, db *gorm.DB) {
+	startTime := time.Now()
+
+	db.Model(&task).Update("Status", model.INPROGRESS)
+
+	inputPath := filepath.Join("uploads", fmt.Sprintf("task-%d", task.ID))
+	outputPath := filepath.Join("objects", fmt.Sprintf("task-%d", task.ID))
+
+	// Clear the build directory
+	if err := os.RemoveAll(outputPath); err != nil {
+		log.Printf("Failed to clear directory %s: %v", outputPath, err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to clear directory"})
+		return
+	}
+
+	if err := os.MkdirAll(outputPath, os.ModePerm); err != nil {
+		log.Printf("Failed to create directory %s: %v", outputPath, err)
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create directory"})
+		return
+	}
+
+	// Run the command (openMVG_main_openMVG2openMVS)
+	log.Println("./bin/SfM_SequentialPipeline.py", inputPath, outputPath)
+	err := exec.Command("./bin/SfM_SequentialPipeline.py", inputPath, outputPath).Run()
+
+	if err != nil {
+		log.Println("OpenMVG failed:", err)
+		db.Model(&task).Update("Status", model.FAILED)
+		return
+	}
+
+	log.Println("./bin/OpenMVS_pipeline.sh", inputPath, outputPath)
+	err = exec.Command("./bin/OpenMVS_pipeline.sh", inputPath, outputPath).Run()
+
+	if err != nil {
+		log.Println("OpenMVS failed:", err)
+		db.Model(&task).Update("Status", model.FAILED)
+		return
+	}
+
+	fileName := "scene_dense_mesh_refine_texture.ply"
+	modelPath := filepath.Join(outputPath, fileName)
+
+	mesh, err := c.AppFileService.Save(&model.AppFile{
+		Url:      modelPath,
+		Filename: fileName,
+		TaskID:   task.ID,
+		FileType: "mesh",
+	})
+
+	if err != nil {
+		log.Printf("Failed to save mesh: %v\n", err)
+		return
+	}
+
+	task.Mesh = mesh
+	task.Completed = true
+	task.Status = model.SUCCESS
+
+	if _, err := c.TaskService.UpdateTask(task); err != nil {
+		log.Printf("Failed to update task: %v\n", err)
+		return
+	}
+
+	log.Println("Task updated successfully.")
+	log.Printf("Processing completed in %s\n", time.Since(startTime))
 }
