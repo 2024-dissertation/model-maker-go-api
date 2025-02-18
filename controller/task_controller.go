@@ -318,7 +318,10 @@ func (c *TaskController) runPhotogrammetryProcess(ctx *gin.Context, task *model.
 
 	// Run the command (openMVG_main_openMVG2openMVS)
 	log.Println("./bin/SfM_SequentialPipeline.py", inputPath, outputPath)
-	err := exec.Command("./bin/SfM_SequentialPipeline.py", inputPath, outputPath).Run()
+	cmd := exec.Command("./bin/SfM_SequentialPipeline.py", inputPath, outputPath)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	err := cmd.Run()
 
 	if err != nil {
 		log.Println("OpenMVG failed:", err)
@@ -327,7 +330,10 @@ func (c *TaskController) runPhotogrammetryProcess(ctx *gin.Context, task *model.
 	}
 
 	log.Println("./bin/OpenMVS_pipeline.sh", inputPath, outputPath)
-	err = exec.Command("./bin/OpenMVS_pipeline.sh", inputPath, outputPath).Run()
+	cmd = exec.Command("./bin/OpenMVS_pipeline.sh", inputPath, outputPath)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	err = cmd.Run()
 
 	if err != nil {
 		log.Println("OpenMVS failed:", err)
