@@ -214,7 +214,7 @@ func (s *TaskServiceImpl) RunPhotogrammetryProcess(task *model.Task) error {
 
 	// 7
 	fileName := filepath.Join(mvsPath, "final_model")
-
+	// blender -b -P ./bin/convert_ply_to_glb.py -- objects/task-3/mvs/scene_dense_mesh_refine_texture.ply, final_model
 	cmd = exec.Command("blender", "-b", "-P", "./bin/convert_ply_to_glb.py", "--", filepath.Join(mvsPath, "scene_dense_mesh_refine_texture.ply"), fileName)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr

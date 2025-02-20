@@ -45,7 +45,7 @@ func NewRouter(
 	// Unauthenticated routes
 	r.POST("/uploads", uploadController.UploadFile)
 	r.GET("/uploads/:taskId/:filename", uploadController.GetFile)
-	r.GET("/objects/:taskID/:filename", objectController.GetObject)
+	r.GET("/objects/:taskID/model", objectController.GetObject)
 
 	return r
 }

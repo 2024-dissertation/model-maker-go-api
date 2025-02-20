@@ -2393,6 +2393,10 @@ iPhone5;1;4.5
 "iPhone6;1";4.89
 "iPhone6;2";4.89
 iPhone6;1;4.8
+iPhone 15 Pro;9.92
+Apple iPhone 15 Pro (Main);9.92
+Apple iPhone 15 Pro (Ultra Wide);7.56
+Apple iPhone 15 Pro (Telephoto);9.92
 IQ140;43.9
 IQ160;53.9
 IQ250;44
