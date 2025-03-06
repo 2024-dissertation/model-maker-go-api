@@ -105,8 +105,8 @@ func (s *TaskServiceImpl) FailTask(task *models.Task) error {
 func (s *TaskServiceImpl) RunPhotogrammetryProcess(task *model.Task) error {
 	startTime := time.Now()
 
-	inputPath := filepath.Join("uploads", fmt.Sprintf("task-%d", task.ID))
-	outputPath := filepath.Join("objects", fmt.Sprintf("task-%d", task.ID))
+	inputPath := filepath.Join("uploads", fmt.Sprintf("task-%d", task.Id))
+	outputPath := filepath.Join("objects", fmt.Sprintf("task-%d", task.Id))
 	mvsPath := filepath.Join(outputPath, "mvs")
 
 	task.Status = model.INPROGRESS
@@ -200,8 +200,8 @@ func (s *TaskServiceImpl) RunPhotogrammetryProcess(task *model.Task) error {
 	}
 
 	// 6
-	log.Println("# 6 TextureMesh", "scene_dense.mvs", "-m", "scene_dense_mesh_refine.ply", "-o", "scene_dense_mesh_refine_texture.mvs", "-w", mvsPath)
-	cmd = exec.Command("TextureMesh", "scene_dense.mvs", "-m", "scene_dense_mesh_refine.ply", "-o", "scene_dense_mesh_refine_texture.mvs", "-w", mvsPath)
+	log.Println("# 6 TextureMesh", "scene_dense.mvs", "-m", "scene_dense_mesh_refine.ply", "-o", "scene_dense_mesh_refine_texture.mvs", "-w", mvsPath, "--export-type", "obj")
+	cmd = exec.Command("TextureMesh", "scene_dense.mvs", "-m", "scene_dense_mesh_refine.ply", "-o", "scene_dense_mesh_refine_texture.mvs", "-w", mvsPath, "--export-type", "obj")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	err = cmd.Run()
@@ -214,8 +214,8 @@ func (s *TaskServiceImpl) RunPhotogrammetryProcess(task *model.Task) error {
 
 	// 7
 	fileName := filepath.Join(mvsPath, "final_model")
-	// blender -b -P ./bin/convert_ply_to_glb.py -- objects/task-3/mvs/scene_dense_mesh_refine_texture.ply, final_model
-	cmd = exec.Command("blender", "-b", "-P", "./bin/convert_ply_to_glb.py", "--", filepath.Join(mvsPath, "scene_dense_mesh_refine_texture.ply"), fileName)
+	fmt.Println("blender", "-b", "-P", "./bin/convert_obj_to_glb.py", "--", filepath.Join(mvsPath, "scene_dense_mesh_refine_texture.obj"), fileName)
+	cmd = exec.Command("blender", "-b", "-P", "./bin/convert_obj_to_glb.py", "--", filepath.Join(mvsPath, "scene_dense_mesh_refine_texture.obj"), fileName)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	err = cmd.Run()
@@ -229,7 +229,7 @@ func (s *TaskServiceImpl) RunPhotogrammetryProcess(task *model.Task) error {
 	mesh, err := s.appFileService.Save(&model.AppFile{
 		Url:      fileName + ".glb",
 		Filename: "final_model.glb",
-		TaskID:   task.ID,
+		TaskId:   task.Id,
 		FileType: "mesh",
 	})
 

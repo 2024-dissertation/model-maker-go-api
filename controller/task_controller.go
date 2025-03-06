@@ -31,7 +31,7 @@ func NewTaskController(taskService services.TaskService, appFileService services
 func (c *TaskController) GetTasks(ctx *gin.Context) {
 
 	user := ctx.MustGet("user")
-	userId := user.(*model.User).ID
+	userId := user.(*model.User).Id
 
 	tasks, err := c.TaskService.GetTasks(userId)
 	if err != nil {
@@ -70,7 +70,7 @@ func (c *TaskController) GetTask(ctx *gin.Context) {
 
 	// Query for the Mesh relation separately
 	var mesh *model.AppFile
-	if err := database.DB.Where("task_id = ? AND file_type = ?", task.ID, "mesh").First(&mesh).Error; err != nil {
+	if err := database.DB.Where("task_id = ? AND file_type = ?", task.Id, "mesh").First(&mesh).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			task.Mesh = nil
 		} else {
@@ -115,7 +115,7 @@ func (c *TaskController) CreateTask(ctx *gin.Context) {
 	task := &model.Task{
 		Title:       req.Title,
 		Description: req.Description,
-		UserID:      user.ID,
+		UserId:      user.Id,
 		Completed:   false,
 		Status:      "INITIAL",
 	}
@@ -148,8 +148,8 @@ func (c *TaskController) CreateTask(ctx *gin.Context) {
 func (c *TaskController) UploadFileToTask(ctx *gin.Context) {
 
 	// Get the Task ID from the route
-	taskIDParam := ctx.Param("taskID")
-	taskID, err := strconv.Atoi(taskIDParam)
+	taskIdParam := ctx.Param("taskID")
+	taskId, err := strconv.Atoi(taskIdParam)
 	if err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid task ID"})
 		return
@@ -157,7 +157,7 @@ func (c *TaskController) UploadFileToTask(ctx *gin.Context) {
 
 	// Check if the Task exists
 	var task model.Task
-	if err := database.DB.First(&task, taskID).Error; err != nil {
+	if err := database.DB.First(&task, taskId).Error; err != nil {
 		ctx.JSON(http.StatusNotFound, gin.H{"error": "Task not found"})
 		return
 	}
@@ -175,7 +175,7 @@ func (c *TaskController) UploadFileToTask(ctx *gin.Context) {
 	}
 
 	// Define the upload folder
-	folderPath := fmt.Sprintf("uploads/task-%d", taskID)
+	folderPath := fmt.Sprintf("uploads/task-%d", taskId)
 	if err := os.MkdirAll(folderPath, os.ModePerm); err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create upload directory"})
 		return
@@ -203,7 +203,7 @@ func (c *TaskController) UploadFileToTask(ctx *gin.Context) {
 			}
 
 			// Generate a unique filename
-			filename := fmt.Sprintf("task-%d-%d%s", taskID, index, fileExt)
+			filename := fmt.Sprintf("task-%d-%d%s", taskId, index, fileExt)
 			savePath := filepath.Join(folderPath, filename)
 
 			// Save the file
@@ -216,8 +216,8 @@ func (c *TaskController) UploadFileToTask(ctx *gin.Context) {
 			// Save metadata to DB
 			image := model.AppFile{
 				Filename: filename,
-				Url:      fmt.Sprintf("/uploads/task-%d/%s", taskID, filename),
-				TaskID:   uint(taskID),
+				Url:      fmt.Sprintf("/uploads/task-%d/%s", taskId, filename),
+				TaskId:   uint(taskId),
 				FileType: "upload",
 			}
 
