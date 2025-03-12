@@ -46,14 +46,16 @@ func main() {
 	userService := services.NewUserService(userRepo)
 	appFileService := services.NewAppFileServiceFile(appFileRepo)
 	taskService := services.NewTaskService(taskRepo, appFileService)
+	visionService := services.NewVisionService()
 
 	authController := controller.NewAuthController(authService, userService)
 	taskController := controller.NewTaskController(taskService, appFileService)
 	uploadController := controller.NewUploadController()
 	objectController := controller.NewObjectController()
+	visionController := controller.NewVisionController(visionService)
 
 	// Set up the HTTP router
-	r := router.NewRouter(authController, taskController, uploadController, objectController, authService)
+	r := router.NewRouter(authController, taskController, uploadController, objectController, visionController, authService)
 
 	// Start the server
 	if r.Run(":"+os.Getenv("PORT")) != nil {

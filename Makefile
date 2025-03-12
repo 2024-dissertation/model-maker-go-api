@@ -1,7 +1,10 @@
 include .env
 
-.DEFAULT_GOAL := build
+.DEFAULT_GOAL := build-and-run
+
 BIN_FILE=main.out
+
+build-and-run: build run
 
 build:
 	@go build -o "${BIN_FILE}"

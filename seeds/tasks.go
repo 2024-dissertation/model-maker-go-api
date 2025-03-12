@@ -13,5 +13,6 @@ func CreateTask(db *gorm.DB, title string, description string, completed bool, u
 		UserId:      userId,
 		Images:      []model.AppFile{},
 		Status:      "INITIAL",
+		Metadata:    map[string]interface{}{},
 	}).Error
 }

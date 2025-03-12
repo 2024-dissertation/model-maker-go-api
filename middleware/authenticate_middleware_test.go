@@ -124,7 +124,7 @@ func TestAuthMiddleware(t *testing.T) {
 
 		assert.Equal(t, http.StatusOK, recorder.Code)
 		assert.JSONEq(t, `{
-            "user": {"CreatedAt":"0001-01-01T00:00:00Z", "DeletedAt":null, "Email":"", "FirebaseUid":"123", "ID":1, "UpdatedAt":"0001-01-01T00:00:00Z"},
+            "user": {"CreatedAt":"0001-01-01T00:00:00Z", "DeletedAt":null, "Email":"", "FirebaseUid":"123", "Id":1, "UpdatedAt":"0001-01-01T00:00:00Z"},
             "token": "123"
         }`, recorder.Body.String())
 	})

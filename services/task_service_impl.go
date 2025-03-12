@@ -59,6 +59,18 @@ func (s *TaskServiceImpl) UpdateTask(task *models.Task) (*models.Task, error) {
 	return task, nil
 }
 
+func (s *TaskServiceImpl) UpdateMeta(task *models.Task, key string, value interface{}) error {
+	if task.Metadata == nil {
+		task.Metadata = make(map[string]interface{})
+	}
+	task.Metadata[key] = value
+	_, err := s.UpdateTask(task)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *TaskServiceImpl) ArchiveTask(taskID uint) error {
 
 	task, err := s.taskRepo.GetTaskByID(taskID)
@@ -105,6 +117,9 @@ func (s *TaskServiceImpl) FailTask(task *models.Task) error {
 func (s *TaskServiceImpl) RunPhotogrammetryProcess(task *model.Task) error {
 	startTime := time.Now()
 
+	TASK_COUNT := 7
+	CURRENT_TASK := 0
+
 	inputPath := filepath.Join("uploads", fmt.Sprintf("task-%d", task.Id))
 	outputPath := filepath.Join("objects", fmt.Sprintf("task-%d", task.Id))
 	mvsPath := filepath.Join(outputPath, "mvs")
@@ -135,6 +150,13 @@ func (s *TaskServiceImpl) RunPhotogrammetryProcess(task *model.Task) error {
 	}
 
 	// 1
+	log.Println("Updating meta for task:", task.Id, " - ", CURRENT_TASK, "/", TASK_COUNT)
+	if err := s.UpdateMeta(task, "opensfm-process", CURRENT_TASK/100); err != nil {
+		log.Printf("Failed to update meta: %d: %v\n", CURRENT_TASK, err)
+		return err
+	}
+	CURRENT_TASK++
+
 	log.Println("# 1 ./bin/SfM_SequentialPipeline.py", inputPath, outputPath, "--opensfm-processes", "8")
 	cmd := exec.Command("./bin/SfM_SequentialPipeline.py", inputPath, outputPath, "--opensfm-processes", "8")
 	cmd.Stdout = os.Stdout
@@ -148,6 +170,13 @@ func (s *TaskServiceImpl) RunPhotogrammetryProcess(task *model.Task) error {
 	}
 
 	// 2
+	log.Println("Updating meta for task:", task.Id, " - ", CURRENT_TASK, "/", TASK_COUNT)
+	if err := s.UpdateMeta(task, "opensfm-process", CURRENT_TASK/100); err != nil {
+		log.Printf("Failed to update meta: %d: %v\n", CURRENT_TASK, err)
+		return err
+	}
+	CURRENT_TASK++
+
 	log.Println("# 2 openMVG_main_openMVG2openMVS", "-i", filepath.Join(outputPath, "reconstruction_sequential/sfm_data.bin"), "-o", filepath.Join(mvsPath, "scene.mvs"), inputPath, outputPath, "-d", mvsPath)
 	cmd = exec.Command("openMVG_main_openMVG2openMVS", "-i", filepath.Join(outputPath, "reconstruction_sequential/sfm_data.bin"), "-o", filepath.Join(mvsPath, "scene.mvs"), inputPath, outputPath, "-d", mvsPath)
 	cmd.Stdout = os.Stdout
@@ -161,6 +190,13 @@ func (s *TaskServiceImpl) RunPhotogrammetryProcess(task *model.Task) error {
 	}
 
 	// 3
+	log.Println("Updating meta for task:", task.Id, " - ", CURRENT_TASK, "/", TASK_COUNT)
+	if err := s.UpdateMeta(task, "opensfm-process", CURRENT_TASK/100); err != nil {
+		log.Printf("Failed to update meta: %d: %v\n", CURRENT_TASK, err)
+		return err
+	}
+	CURRENT_TASK++
+
 	log.Println("# 3 DensifyPointCloud", "scene.mvs", "-o", "scene_dense.mvs", "-w", mvsPath)
 	cmd = exec.Command("DensifyPointCloud", "scene.mvs", "-o", "scene_dense.mvs", "-w", mvsPath)
 	cmd.Stdout = os.Stdout
@@ -174,6 +210,13 @@ func (s *TaskServiceImpl) RunPhotogrammetryProcess(task *model.Task) error {
 	}
 
 	// 4
+	log.Println("Updating meta for task:", task.Id, " - ", CURRENT_TASK, "/", TASK_COUNT)
+	if err := s.UpdateMeta(task, "opensfm-process", CURRENT_TASK/100); err != nil {
+		log.Printf("Failed to update meta: %d: %v\n", CURRENT_TASK, err)
+		return err
+	}
+	CURRENT_TASK++
+
 	log.Println("# 4 ReconstructMesh", "scene_dense.mvs", "-o", "scene_mesh.ply", "-w", mvsPath)
 	cmd = exec.Command("ReconstructMesh", "scene_dense.mvs", "-o", "scene_mesh.ply", "-w", mvsPath)
 	cmd.Stdout = os.Stdout
@@ -187,6 +230,13 @@ func (s *TaskServiceImpl) RunPhotogrammetryProcess(task *model.Task) error {
 	}
 
 	// 5
+	log.Println("Updating meta for task:", task.Id, " - ", CURRENT_TASK, "/", TASK_COUNT)
+	if err := s.UpdateMeta(task, "opensfm-process", CURRENT_TASK/100); err != nil {
+		log.Printf("Failed to update meta: %d: %v\n", CURRENT_TASK, err)
+		return err
+	}
+	CURRENT_TASK++
+
 	log.Println("# 5 RefineMesh", "scene.mvs", "-m", "scene_mesh.ply", "-o", "scene_dense_mesh_refine.mvs", "-w", mvsPath, "--scales", "1", "--max-face-area", "16")
 	cmd = exec.Command("RefineMesh", "scene.mvs", "-m", "scene_mesh.ply", "-o", "scene_dense_mesh_refine.mvs", "-w", mvsPath, "--scales", "1", "--max-face-area", "16")
 	cmd.Stdout = os.Stdout
@@ -200,6 +250,13 @@ func (s *TaskServiceImpl) RunPhotogrammetryProcess(task *model.Task) error {
 	}
 
 	// 6
+	log.Println("Updating meta for task:", task.Id, " - ", CURRENT_TASK, "/", TASK_COUNT)
+	if err := s.UpdateMeta(task, "opensfm-process", CURRENT_TASK/100); err != nil {
+		log.Printf("Failed to update meta: %d: %v\n", CURRENT_TASK, err)
+		return err
+	}
+	CURRENT_TASK++
+
 	log.Println("# 6 TextureMesh", "scene_dense.mvs", "-m", "scene_dense_mesh_refine.ply", "-o", "scene_dense_mesh_refine_texture.mvs", "-w", mvsPath, "--export-type", "obj")
 	cmd = exec.Command("TextureMesh", "scene_dense.mvs", "-m", "scene_dense_mesh_refine.ply", "-o", "scene_dense_mesh_refine_texture.mvs", "-w", mvsPath, "--export-type", "obj")
 	cmd.Stdout = os.Stdout
@@ -213,6 +270,13 @@ func (s *TaskServiceImpl) RunPhotogrammetryProcess(task *model.Task) error {
 	}
 
 	// 7
+	log.Println("Updating meta for task:", task.Id, " - ", CURRENT_TASK, "/", TASK_COUNT)
+	if err := s.UpdateMeta(task, "opensfm-process", CURRENT_TASK/100); err != nil {
+		log.Printf("Failed to update meta: %d: %v\n", CURRENT_TASK, err)
+		return err
+	}
+	CURRENT_TASK++
+
 	fileName := filepath.Join(mvsPath, "final_model")
 	fmt.Println("blender", "-b", "-P", "./bin/convert_obj_to_glb.py", "--", filepath.Join(mvsPath, "scene_dense_mesh_refine_texture.obj"), fileName)
 	cmd = exec.Command("blender", "-b", "-P", "./bin/convert_obj_to_glb.py", "--", filepath.Join(mvsPath, "scene_dense_mesh_refine_texture.obj"), fileName)
