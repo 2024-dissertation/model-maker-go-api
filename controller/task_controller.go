@@ -175,7 +175,7 @@ func (c *TaskController) UploadFileToTask(ctx *gin.Context) {
 	}
 
 	// Define the upload folder
-	folderPath := fmt.Sprintf("uploads/task-%d", taskId)
+	folderPath := fmt.Sprintf("uploads/%d", taskId)
 	if err := os.MkdirAll(folderPath, os.ModePerm); err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create upload directory"})
 		return
@@ -203,7 +203,7 @@ func (c *TaskController) UploadFileToTask(ctx *gin.Context) {
 			}
 
 			// Generate a unique filename
-			filename := fmt.Sprintf("task-%d-%d%s", taskId, index, fileExt)
+			filename := fmt.Sprintf("%d-%d%s", taskId, index, fileExt)
 			savePath := filepath.Join(folderPath, filename)
 
 			// Save the file
@@ -216,7 +216,7 @@ func (c *TaskController) UploadFileToTask(ctx *gin.Context) {
 			// Save metadata to DB
 			image := model.AppFile{
 				Filename: filename,
-				Url:      fmt.Sprintf("/uploads/task-%d/%s", taskId, filename),
+				Url:      fmt.Sprintf("/uploads/%d/%s", taskId, filename),
 				TaskId:   uint(taskId),
 				FileType: "upload",
 			}

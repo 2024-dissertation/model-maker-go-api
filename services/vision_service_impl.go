@@ -68,7 +68,6 @@ func extractText(resp *genai.GenerateContentResponse) string {
 				if text, ok := part.(genai.Text); ok {
 					builder.WriteString(string(text))
 				}
-
 			}
 		}
 	}

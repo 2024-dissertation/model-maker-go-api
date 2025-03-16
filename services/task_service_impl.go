@@ -120,8 +120,8 @@ func (s *TaskServiceImpl) RunPhotogrammetryProcess(task *model.Task) error {
 	TASK_COUNT := 7
 	CURRENT_TASK := 0
 
-	inputPath := filepath.Join("uploads", fmt.Sprintf("task-%d", task.Id))
-	outputPath := filepath.Join("objects", fmt.Sprintf("task-%d", task.Id))
+	inputPath := filepath.Join("uploads", fmt.Sprintf("%d", task.Id))
+	outputPath := filepath.Join("objects", fmt.Sprintf("%d", task.Id))
 	mvsPath := filepath.Join(outputPath, "mvs")
 
 	task.Status = model.INPROGRESS
