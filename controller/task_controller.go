@@ -22,10 +22,11 @@ import (
 type TaskController struct {
 	TaskService    services.TaskService
 	AppFileService services.AppFileService
+	VisionService  services.VisionService
 }
 
-func NewTaskController(taskService services.TaskService, appFileService services.AppFileService) *TaskController {
-	return &TaskController{TaskService: taskService, AppFileService: appFileService}
+func NewTaskController(taskService services.TaskService, appFileService services.AppFileService, visionService services.VisionService) *TaskController {
+	return &TaskController{TaskService: taskService, AppFileService: appFileService, VisionService: visionService}
 }
 
 func (c *TaskController) GetTasks(ctx *gin.Context) {
@@ -39,6 +40,7 @@ func (c *TaskController) GetTasks(ctx *gin.Context) {
 		return
 	}
 
+	// I dont like this being in a controller, but time constraints
 	if err := database.DB.Preload("Mesh", "file_type = ?", "mesh").Find(&tasks).Error; err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch tasks"})
 		return
@@ -63,31 +65,10 @@ func (c *TaskController) GetTask(ctx *gin.Context) {
 		return
 	}
 
-	if err := database.DB.Preload("Images", "file_type = ?", "upload").First(&task, taskID).Error; err != nil {
-		ctx.JSON(http.StatusNotFound, gin.H{"error": "Task not found"})
-		return
-	}
-
-	// Query for the Mesh relation separately
-	var mesh *model.AppFile
-	if err := database.DB.Where("task_id = ? AND file_type = ?", task.Id, "mesh").First(&mesh).Error; err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			task.Mesh = nil
-		} else {
-			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to load Mesh"})
-			return
-		}
-	} else {
-		task.Mesh = mesh
-	}
+	// Load relations
+	c.TaskService.FullyLoadTask(task)
 
 	ctx.JSON(200, gin.H{"task": task})
-}
-
-// CreateTaskRequest
-type CreateTaskRequest struct {
-	Title       string `json:"title" binding:"required"`
-	Description string `json:"description" binding:"required"`
 }
 
 // CreateTask handles task creation
@@ -105,16 +86,9 @@ type CreateTaskRequest struct {
 func (c *TaskController) CreateTask(ctx *gin.Context) {
 	user := ctx.MustGet("user").(*model.User)
 
-	var req CreateTaskRequest
-
-	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.AbortWithStatusJSON(400, gin.H{"error": "Invalid request body"})
-		return
-	}
-
 	task := &model.Task{
-		Title:       req.Title,
-		Description: req.Description,
+		Title:       "",
+		Description: "", // Overriden by ai-description
 		UserId:      user.Id,
 		Completed:   false,
 		Status:      "INITIAL",
@@ -240,6 +214,34 @@ func (c *TaskController) UploadFileToTask(ctx *gin.Context) {
 	}
 
 	tx.Commit()
+
+	go func() {
+		// Generate caption
+		result, err := c.VisionService.AnalyseImage(fmt.Sprintf("./uploads/%d/%s", taskId, uploadedImages[0].Filename), "")
+
+		if err != nil {
+			log.Printf("Unable to analyze the image: %v", err)
+			return
+		}
+
+		if err := c.TaskService.UpdateMeta(&task, "ai-description", result); err != nil {
+			log.Printf("Failed to update task metadata: %v", err)
+		}
+	}()
+
+	go func() {
+		// Generate caption
+		result, err := c.VisionService.AnalyseImage(fmt.Sprintf("./uploads/%d/%s", taskId, uploadedImages[0].Filename), "categorize the model in this image, use one word only")
+
+		if err != nil {
+			log.Printf("Unable to analyze the image: %v", err)
+			return
+		}
+
+		if err := c.TaskService.UpdateMeta(&task, "ai-title", result); err != nil {
+			log.Printf("Failed to update task metadata: %v", err)
+		}
+	}()
 
 	ctx.JSON(http.StatusOK, gin.H{
 		"message": "Files uploaded successfully",

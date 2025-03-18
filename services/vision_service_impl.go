@@ -18,7 +18,11 @@ func NewVisionService() *VisionServiceImpl {
 	return &VisionServiceImpl{}
 }
 
-func (s *VisionServiceImpl) AnalyseImage(imagePath string) (string, error) {
+func (s *VisionServiceImpl) AnalyseImage(imagePath string, prompt string) (string, error) {
+	if prompt == "" {
+		prompt = "Caption this image, give one sentence only"
+	}
+
 	ctx := context.Background()
 	client, err := genai.NewClient(ctx, option.WithAPIKey(os.Getenv("GEMINI_API_KEY")))
 	if err != nil {
@@ -42,8 +46,7 @@ func (s *VisionServiceImpl) AnalyseImage(imagePath string) (string, error) {
 	// Create the request.
 	req := []genai.Part{
 		genai.ImageData("jpeg", imageBytes),
-
-		genai.Text("Caption this image."),
+		genai.Text(prompt),
 	}
 
 	// Generate content.
@@ -55,7 +58,6 @@ func (s *VisionServiceImpl) AnalyseImage(imagePath string) (string, error) {
 	var result string = extractText(resp)
 
 	return result, nil
-
 }
 
 func extractText(resp *genai.GenerateContentResponse) string {

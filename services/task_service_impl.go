@@ -1,6 +1,7 @@
 package services
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -8,9 +9,9 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/Soup666/diss-api/model"
 	models "github.com/Soup666/diss-api/model"
 	repositories "github.com/Soup666/diss-api/repository"
+	"gorm.io/gorm"
 )
 
 type TaskServiceImpl struct {
@@ -106,7 +107,7 @@ func (s *TaskServiceImpl) DeleteTask(taskID *models.Task) error {
 }
 
 func (s *TaskServiceImpl) FailTask(task *models.Task) error {
-	task.Status = model.FAILED
+	task.Status = models.FAILED
 	_, err := s.UpdateTask(task)
 	if err != nil {
 		return err
@@ -114,7 +115,7 @@ func (s *TaskServiceImpl) FailTask(task *models.Task) error {
 	return nil
 }
 
-func (s *TaskServiceImpl) RunPhotogrammetryProcess(task *model.Task) error {
+func (s *TaskServiceImpl) RunPhotogrammetryProcess(task *models.Task) error {
 	startTime := time.Now()
 
 	TASK_COUNT := 7
@@ -124,7 +125,7 @@ func (s *TaskServiceImpl) RunPhotogrammetryProcess(task *model.Task) error {
 	outputPath := filepath.Join("objects", fmt.Sprintf("%d", task.Id))
 	mvsPath := filepath.Join(outputPath, "mvs")
 
-	task.Status = model.INPROGRESS
+	task.Status = models.INPROGRESS
 	if _, err := s.UpdateTask(task); err != nil {
 		log.Printf("Failed to update task status to INPROGRESS: %v\n", err)
 		return err
@@ -290,7 +291,7 @@ func (s *TaskServiceImpl) RunPhotogrammetryProcess(task *model.Task) error {
 		return err
 	}
 
-	mesh, err := s.appFileService.Save(&model.AppFile{
+	mesh, err := s.appFileService.Save(&models.AppFile{
 		Url:      fileName + ".glb",
 		Filename: "final_model.glb",
 		TaskId:   task.Id,
@@ -304,7 +305,7 @@ func (s *TaskServiceImpl) RunPhotogrammetryProcess(task *model.Task) error {
 
 	task.Mesh = mesh
 	task.Completed = true
-	task.Status = model.SUCCESS
+	task.Status = models.SUCCESS
 
 	if _, err := s.UpdateTask(task); err != nil {
 		log.Printf("Failed to update task: %v\n", err)
@@ -314,4 +315,41 @@ func (s *TaskServiceImpl) RunPhotogrammetryProcess(task *model.Task) error {
 	log.Println("Task updated successfully.")
 	log.Printf("Processing completed in %s\n", time.Since(startTime))
 	return nil
+}
+
+func (s *TaskServiceImpl) GetTaskFiles(taskID uint, fileType string) ([]models.AppFile, error) {
+	files, err := s.appFileService.GetTaskFiles(taskID, fileType)
+	if err != nil {
+		return nil, err
+	}
+	return files, nil
+}
+
+func (s *TaskServiceImpl) GetTaskFile(taskID uint, fileType string) (*models.AppFile, error) {
+	file, err := s.appFileService.GetTaskFile(taskID, fileType)
+	if err != nil {
+		return nil, err
+	}
+	return file, nil
+}
+
+func (s *TaskServiceImpl) FullyLoadTask(task *models.Task) (*models.Task, error) {
+	files, err := s.GetTaskFiles(task.Id, "upload")
+	if err != nil {
+		return nil, err
+	}
+	task.Images = files
+
+	mesh, err := s.GetTaskFile(task.Id, "mesh")
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			task.Mesh = nil
+		} else {
+			return nil, err
+		}
+	} else {
+		task.Mesh = mesh
+	}
+
+	return task, nil
 }

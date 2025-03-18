@@ -36,5 +36,5 @@ type Task struct {
 	UserId      uint
 	Images      []AppFile `gorm:"foreignKey:TaskId"`
 	Mesh        *AppFile  `gorm:"foreignKey:TaskId"`
-	Metadata    JSONMap   `gorm:"type:json" json:"metadata"`
+	Metadata    JSONMap   `gorm:"type:json" json:"Metadata"`
 }

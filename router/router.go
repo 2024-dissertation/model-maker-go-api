@@ -45,6 +45,7 @@ func NewRouter(
 
 	// Image analysis
 	authRequired.POST("/analyze", visionController.AnalyzeImage)
+	authRequired.POST("/analyze/:taskID", visionController.AnalyzeTask)
 
 	// Unauthenticated routes
 	r.POST("/uploads", uploadController.UploadFile)

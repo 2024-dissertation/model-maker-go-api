@@ -49,10 +49,10 @@ func main() {
 	visionService := services.NewVisionService()
 
 	authController := controller.NewAuthController(authService, userService)
-	taskController := controller.NewTaskController(taskService, appFileService)
+	taskController := controller.NewTaskController(taskService, appFileService, visionService)
 	uploadController := controller.NewUploadController()
 	objectController := controller.NewObjectController()
-	visionController := controller.NewVisionController(visionService)
+	visionController := controller.NewVisionController(visionService, taskRepo, taskService)
 
 	// Set up the HTTP router
 	r := router.NewRouter(authController, taskController, uploadController, objectController, visionController, authService)
