@@ -1,0 +1,77 @@
+# ------------------------------
+# Stage 1: Build OpenMVG/OpenMVS
+# ------------------------------
+FROM ubuntu:22.04 AS openmvg_openmvs_builder
+
+ENV DEBIAN_FRONTEND=noninteractive TZ=Europe/Minsk
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    tzdata cmake build-essential git wget python3-dev \
+    libboost-all-dev libopencv-dev \
+    libjpeg-dev libpng-dev libtiff-dev libglu1-mesa-dev \
+    libglew-dev libglfw3-dev coinor-libclp-dev libceres-dev \
+    libcgal-dev libcgal-qt5-dev graphviz liblemon-dev \
+    ca-certificates && \
+    rm -rf /var/lib/apt/lists/* && update-ca-certificates
+
+RUN git clone --depth=1 https://github.com/cdcseacave/VCG.git /vcglib
+
+RUN git clone --recursive https://github.com/openMVG/openMVG.git /openMVG && \
+    mkdir -p /openMVG_build && cd /openMVG_build && \
+    cmake -DCMAKE_BUILD_TYPE=RELEASE /openMVG/src && \
+    make -j$(nproc)
+
+RUN git clone --branch develop https://github.com/cdcseacave/openMVS.git /openMVS && \
+    sed -i 's|<CGAL/AABB_traits_3.h>|<CGAL/AABB_tree.h>|g' /openMVS/libs/MVS/SceneReconstruct.cpp && \
+    sed -i 's|<CGAL/AABB_triangle_primitive_3.h>|<CGAL/AABB_triangle_primitive.h>|g' /openMVS/libs/MVS/SceneReconstruct.cpp && \
+    mkdir -p /openMVS_build && cd /openMVS_build && \
+    cmake -DCMAKE_BUILD_TYPE=RELEASE \
+            -DOpenMVG_DIR=/openMVG_build/src/openMVG/cmake/ \
+            -DVCG_ROOT=/vcglib \
+            /openMVS && \
+    make -j$(nproc)
+
+# -------------------------
+# Stage 2: Build Go backend
+# -------------------------
+FROM golang:1.22-bookworm AS golang_builder
+
+WORKDIR /app
+COPY . .
+
+RUN go mod download && go mod vendor && \
+    go install github.com/pressly/goose/v3/cmd/goose@latest && \
+    go build -o server .
+
+# ------------------------
+# Stage 3: Final Runtime
+# ------------------------
+FROM debian:bookworm-slim AS runtime
+
+ENV DEBIAN_FRONTEND=noninteractive TZ=Europe/Minsk
+WORKDIR /app
+
+# Install runtime dependencies for OpenMVG/OpenMVS
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libboost-system1.74.0 \
+    libboost-thread1.74.0 \
+    libboost-filesystem1.74.0 \
+    libboost-program-options1.74.0 \
+    libopencv-dev libjpeg-dev libpng-dev && \
+    rm -rf /var/lib/apt/lists/*
+
+# Copy server binary
+COPY --from=golang_builder /app/server .
+
+# Copy OpenMVG and OpenMVS executables
+COPY --from=openmvg_openmvs_builder /openMVG_build/Linux-x86_64-RELEASE /usr/local/bin
+COPY --from=openmvg_openmvs_builder /openMVS_build/bin /usr/local/bin
+
+# Update PATH so binaries can be found
+ENV PATH="/usr/local/bin/openMVG:/usr/local/bin/openMVS:$PATH"
+
+EXPOSE 3333
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s CMD curl -f http://localhost:3333/health || exit 1
+
+ENTRYPOINT ["./server"]

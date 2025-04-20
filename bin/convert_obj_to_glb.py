@@ -5,13 +5,17 @@ import bpy
 import sys
 import os
 
+print ("Blender version:", bpy.app.version_string)
+print ("PBYTHON version:", bpy.app)
+
 def convert_obj_to_glb(input_path, output_path):
     # Clear existing mesh objects
     bpy.ops.object.select_all(action='SELECT')
     bpy.ops.object.delete()
     
     # Import obj file
-    bpy.ops.wm.obj_import(filepath=input_path)
+    # bpy.ops.wm.obj_import
+    bpy.ops.import_scene.obj(filepath=input_path)
     
     # Select all objects
     bpy.ops.object.select_all(action='SELECT')

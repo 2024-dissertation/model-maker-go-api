@@ -1,0 +1,70 @@
+# -----------------------------------
+# Dev Image: All-in-one development
+# -----------------------------------
+FROM ubuntu:22.04
+
+ENV DEBIAN_FRONTEND=noninteractive TZ=Europe/Minsk
+
+# Install all dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    tzdata cmake build-essential git wget curl \
+    python3-dev libboost-all-dev libopencv-dev \
+    libjpeg-dev libpng-dev libtiff-dev libglu1-mesa-dev \
+    libglew-dev libglfw3-dev coinor-libclp-dev libceres-dev \
+    libcgal-dev libcgal-qt5-dev graphviz liblemon-dev \
+    ca-certificates pkg-config \
+    vim nano && \
+    
+    rm -rf /var/lib/apt/lists/* && update-ca-certificates
+
+# Optional: set up Go env
+# ENV GOPATH=/go
+# ENV PATH=$GOPATH/bin:/usr/local/go/bin:$PATH
+# ENV GO111MODULE=on
+
+# Clone OpenMVG
+RUN git clone --recursive https://github.com/openMVG/openMVG.git /opt/openMVG && \
+    mkdir -p /opt/openMVG_build && cd /opt/openMVG_build && \
+    cmake -DCMAKE_BUILD_TYPE=RELEASE /opt/openMVG/src && \
+    make -j$(nproc)
+
+# Clone VCG and OpenMVS
+RUN git clone --depth=1 https://github.com/cdcseacave/VCG.git /vcglib && \
+    git clone --branch develop https://github.com/cdcseacave/openMVS.git /opt/openMVS && \
+    sed -i 's|<CGAL/AABB_traits_3.h>|<CGAL/AABB_tree.h>|g' /opt/openMVS/libs/MVS/SceneReconstruct.cpp && \
+    sed -i 's|<CGAL/AABB_triangle_primitive_3.h>|<CGAL/AABB_triangle_primitive.h>|g' /opt/openMVS/libs/MVS/SceneReconstruct.cpp && \
+    mkdir -p /opt/openMVS_build && cd /opt/openMVS_build && \
+    cmake -DCMAKE_BUILD_TYPE=RELEASE \
+            -DOpenMVG_DIR=/opt/openMVG_build/src/openMVG/cmake/ \
+            -DVCG_ROOT=/vcglib \
+            /opt/openMVS && \
+    make -j$(nproc)
+
+# Set up working directory for your Go app
+WORKDIR /app
+
+# Set PATH so you can use openMVG/openMVS from anywhere
+ENV PATH="/opt/openMVG_build/Linux-x86_64-RELEASE:/opt/openMVS_build/bin:$PATH"
+
+# RUN rm go.mod go.sum && \
+#     go mod init github.com/cdcseacave/photogrammetry && \
+#     go mod tidy && \
+#     go mod vendor
+
+# # Optional: install goose migration tool globally
+# RUN go install github.com/pressly/goose/v3/cmd/goose@latest
+
+RUN wget https://mirror.clarkson.edu/blender/release/Blender2.83/blender-2.83.0-linux64.tar.xz \ 
+	&& tar -xvf blender-2.83.0-linux64.tar.xz --strip-components=1 -C /bin \ 
+	&& rm -rf blender-2.83.0-linux64.tar.xz \ 
+	&& rm -rf blender-2.83.0-linux64 
+
+RUN wget https://go.dev/dl/go1.23.8.linux-amd64.tar.gz && \
+    tar -C /usr/local -xzf go1.23.8.linux-amd64.tar.gz && \
+    rm -rf go1.23.8.linux-amd64.tar.gz
+
+ENV PATH="$PATH:/usr/local/go/bin"
+
+EXPOSE 3333
+
+CMD ["bash"]

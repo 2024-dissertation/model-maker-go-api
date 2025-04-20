@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #! -*- encoding: utf-8 -*-
 
 # This file is part of OpenMVG (Open Multiple View Geometry) C++ library.
@@ -18,10 +18,10 @@
 #
 
 # Indicate the openMVG binary directory
-OPENMVG_SFM_BIN = "/Users/samlaister/repos/openMVG_Build/Darwin-arm64-RELEASE"
+OPENMVG_SFM_BIN = "/opt/openMVG_build/Linux-x86_64-RELEASE"
 
 # Indicate the openMVG camera sensor width directory
-CAMERA_SENSOR_WIDTH_DIRECTORY = "/Users/samlaister/repos/openMVG/src/software/SfM" + "/../../openMVG/exif/sensor_width_database"
+CAMERA_SENSOR_WIDTH_DIRECTORY = "/opt/openMVG/src/software/SfM" + "/../../openMVG/exif/sensor_width_database"
 
 import os
 import subprocess
@@ -36,7 +36,6 @@ output_dir = sys.argv[2]
 matches_dir = os.path.join(output_dir, "matches")
 reconstruction_dir = os.path.join(output_dir, "reconstruction_sequential")
 camera_file_params = os.path.join(CAMERA_SENSOR_WIDTH_DIRECTORY, "sensor_width_camera_database.txt")
-print(camera_file_params)
 
 print ("Using input dir  : ", input_dir)
 print ("      output_dir : ", output_dir)
@@ -48,7 +47,7 @@ if not os.path.exists(matches_dir):
   os.mkdir(matches_dir)
 
 print ("1. Intrinsics analysis")
-pIntrisics = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "openMVG_main_SfMInit_ImageListing"),  "-i", input_dir, "-o", matches_dir, "-d", camera_file_params, "-f", "2304"] ) # , "-f", "2304"] )
+pIntrisics = subprocess.Popen( [os.path.join(OPENMVG_SFM_BIN, "openMVG_main_SfMInit_ImageListing"),  "-i", input_dir, "-o", matches_dir, "-d", camera_file_params, "-f", "2304"] )
 pIntrisics.wait()
 
 print ("2. Compute features")
