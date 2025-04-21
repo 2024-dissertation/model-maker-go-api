@@ -40,6 +40,8 @@ func main() {
 	userRepo := repositories.NewUserRepository(db.DB)
 	taskRepo := repositories.NewTaskRepository(db.DB)
 	appFileRepo := repositories.NewAppFileRepository(db.DB)
+	reportsRepo := repositories.NewReportsRepository(db.DB)
+	collectionsRepo := repositories.NewCollectionsRepository(db.DB)
 
 	// Set up the authentication service
 	authService := services.NewAuthService(authClient, db.DB, userRepo)
@@ -47,15 +49,19 @@ func main() {
 	appFileService := services.NewAppFileServiceFile(appFileRepo)
 	taskService := services.NewTaskService(taskRepo, appFileService)
 	visionService := services.NewVisionService()
+	reportsService := services.NewReportsService(reportsRepo)
+	collectionsService := services.NewCollectionsService(collectionsRepo)
 
 	authController := controller.NewAuthController(authService, userService)
 	taskController := controller.NewTaskController(taskService, appFileService, visionService)
 	uploadController := controller.NewUploadController()
 	objectController := controller.NewObjectController()
 	visionController := controller.NewVisionController(visionService, taskRepo, taskService)
+	reportsController := controller.NewReportsController(reportsService)
+	collectionsController := controller.NewCollectionsController(collectionsService)
 
 	// Set up the HTTP router
-	r := router.NewRouter(authController, taskController, uploadController, objectController, visionController, authService)
+	r := router.NewRouter(authController, taskController, uploadController, objectController, visionController, authService, reportsController, collectionsController)
 
 	// Start the server
 	if r.Run(":"+os.Getenv("PORT")) != nil {

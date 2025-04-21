@@ -14,7 +14,7 @@ import (
 
 type VisionServiceImpl struct{}
 
-func NewVisionService() *VisionServiceImpl {
+func NewVisionService() VisionService {
 	return &VisionServiceImpl{}
 }
 

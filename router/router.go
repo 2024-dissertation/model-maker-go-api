@@ -17,7 +17,9 @@ func NewRouter(
 	uploadController *controller.UploadController,
 	objectController *controller.ObjectController,
 	visionController *controller.VisionController,
-	authService *services.AuthServiceImpl,
+	authService services.AuthService,
+	reportsController *controller.ReportsController,
+	collectionsController *controller.CollectionsController,
 ) *gin.Engine {
 
 	r := gin.Default()
@@ -42,6 +44,19 @@ func NewRouter(
 	authRequired.GET("/tasks/:taskID", taskController.GetTask)
 	authRequired.POST("/tasks/:taskID/upload", taskController.UploadFileToTask)
 	authRequired.POST("/tasks/:taskID/start", taskController.StartProcess)
+
+	// Reports
+	authRequired.GET("/reports", reportsController.GetReports)
+	authRequired.POST("/reports", reportsController.CreateReport)
+	authRequired.GET("/reports/:reportID", reportsController.GetReportByID)
+	authRequired.PUT("/reports", reportsController.SaveReport)
+
+	// Collections
+	authRequired.GET("/collections", collectionsController.GetCollections)
+	authRequired.POST("/collections", collectionsController.CreateCollection)
+	authRequired.GET("/collections/:collectionID", collectionsController.GetCollection)
+	authRequired.PUT("/collections", collectionsController.SaveCollection)
+	authRequired.DELETE("/collections/:collectionID", collectionsController.ArchiveCollection)
 
 	// Image analysis
 	authRequired.POST("/analyze", visionController.AnalyzeImage)

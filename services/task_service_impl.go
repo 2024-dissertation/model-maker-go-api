@@ -19,7 +19,7 @@ type TaskServiceImpl struct {
 	appFileService AppFileService
 }
 
-func NewTaskService(taskRepo repositories.TaskRepository, appFileService AppFileService) *TaskServiceImpl {
+func NewTaskService(taskRepo repositories.TaskRepository, appFileService AppFileService) TaskService {
 	return &TaskServiceImpl{taskRepo: taskRepo, appFileService: appFileService}
 }
 

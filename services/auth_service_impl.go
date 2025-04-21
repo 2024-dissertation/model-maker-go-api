@@ -16,7 +16,7 @@ type AuthServiceImpl struct {
 	userRepo repositories.UserRepository
 }
 
-func NewAuthService(FireAuth *auth.Client, DB *gorm.DB, userRepo repositories.UserRepository) *AuthServiceImpl {
+func NewAuthService(FireAuth *auth.Client, DB *gorm.DB, userRepo repositories.UserRepository) AuthService {
 	return &AuthServiceImpl{FireAuth: FireAuth, DB: DB, userRepo: userRepo}
 }
 
