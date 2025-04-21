@@ -52,7 +52,6 @@ ENV PATH="/opt/openMVG_build/Linux-x86_64-RELEASE:/opt/openMVS_build/bin:$PATH"
 #     go mod vendor
 
 # # Optional: install goose migration tool globally
-# RUN go install github.com/pressly/goose/v3/cmd/goose@latest
 
 RUN wget https://mirror.clarkson.edu/blender/release/Blender2.83/blender-2.83.0-linux64.tar.xz \ 
 	&& tar -xvf blender-2.83.0-linux64.tar.xz --strip-components=1 -C /bin \ 
@@ -62,6 +61,8 @@ RUN wget https://mirror.clarkson.edu/blender/release/Blender2.83/blender-2.83.0-
 RUN wget https://go.dev/dl/go1.23.8.linux-amd64.tar.gz && \
     tar -C /usr/local -xzf go1.23.8.linux-amd64.tar.gz && \
     rm -rf go1.23.8.linux-amd64.tar.gz
+    
+RUN go install github.com/pressly/goose/v3/cmd/goose@latest
 
 ENV PATH="$PATH:/usr/local/go/bin"
 
