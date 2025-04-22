@@ -42,12 +42,13 @@ func main() {
 	appFileRepo := repositories.NewAppFileRepository(db.DB)
 	reportsRepo := repositories.NewReportsRepository(db.DB)
 	collectionsRepo := repositories.NewCollectionsRepository(db.DB)
+	chatRepo := repositories.NewChatRepository(db.DB)
 
 	// Set up the authentication service
 	authService := services.NewAuthService(authClient, db.DB, userRepo)
 	userService := services.NewUserService(userRepo)
 	appFileService := services.NewAppFileServiceFile(appFileRepo)
-	taskService := services.NewTaskService(taskRepo, appFileService)
+	taskService := services.NewTaskService(taskRepo, appFileService, chatRepo)
 	visionService := services.NewVisionService()
 	reportsService := services.NewReportsService(reportsRepo)
 	collectionsService := services.NewCollectionsService(collectionsRepo)

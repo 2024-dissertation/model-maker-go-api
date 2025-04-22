@@ -89,7 +89,7 @@ func (c *TaskController) CreateTask(ctx *gin.Context) {
 	task := &model.Task{
 		Title:       "",
 		Description: "", // Overriden by ai-description
-		UserId:      user.Id,
+		UserId:      &user.Id,
 		Completed:   false,
 		Status:      "INITIAL",
 	}
@@ -293,4 +293,55 @@ func (c *TaskController) StartProcess(ctx *gin.Context) {
 	ctx.JSON(http.StatusAccepted, gin.H{"message": "Process started."})
 
 	go c.TaskService.RunPhotogrammetryProcess(task)
+}
+
+func (c *TaskController) UpdateTask(ctx *gin.Context) {
+	task := &model.Task{}
+
+	if err := ctx.ShouldBindJSON(task); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		return
+	}
+
+	user := ctx.MustGet("user").(*model.User)
+	task.UserId = &user.Id
+
+	_, err := c.TaskService.UpdateTask(task)
+	if err != nil {
+		ctx.AbortWithStatusJSON(400, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"task": task})
+}
+
+func (c *TaskController) SendMessage(ctx *gin.Context) {
+
+	taskId := ctx.Param("taskID")
+	taskIdInt, err := strconv.Atoi(taskId)
+
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid task ID"})
+		return
+	}
+
+	type MessageBody struct {
+		Message string
+	}
+
+	chatMessage := &MessageBody{}
+
+	if err := ctx.ShouldBindJSON(chatMessage); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+		return
+	}
+
+	message, err := c.TaskService.SendMessage(uint(taskIdInt), chatMessage.Message, "USER")
+
+	if err != nil {
+		ctx.AbortWithStatusJSON(400, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"message": message})
 }

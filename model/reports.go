@@ -12,7 +12,7 @@ const (
 
 // Report represents a user-submitted report (bug or feedback).
 type Report struct {
-	ID         uint       `gorm:"primaryKey"`
+	Id         uint       `gorm:"primaryKey"`
 	Title      string     `gorm:"type:text;not null"`
 	Body       string     `gorm:"type:text;not null"`
 	ReportType ReportType `gorm:"type:reporttype;not null"`

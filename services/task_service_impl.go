@@ -17,10 +17,11 @@ import (
 type TaskServiceImpl struct {
 	taskRepo       repositories.TaskRepository
 	appFileService AppFileService
+	chatRepository repositories.ChatRepository
 }
 
-func NewTaskService(taskRepo repositories.TaskRepository, appFileService AppFileService) TaskService {
-	return &TaskServiceImpl{taskRepo: taskRepo, appFileService: appFileService}
+func NewTaskService(taskRepo repositories.TaskRepository, appFileService AppFileService, chatRepository repositories.ChatRepository) TaskService {
+	return &TaskServiceImpl{taskRepo: taskRepo, appFileService: appFileService, chatRepository: chatRepository}
 }
 
 func (s *TaskServiceImpl) CreateTask(task *models.Task) (*models.Task, error) {
@@ -352,4 +353,18 @@ func (s *TaskServiceImpl) FullyLoadTask(task *models.Task) (*models.Task, error)
 	}
 
 	return task, nil
+}
+
+func (s *TaskServiceImpl) SendMessage(taskID uint, message string, sender string) (*models.ChatMessage, error) {
+	chatMessage := &models.ChatMessage{
+		Message: message,
+		TaskId:  taskID,
+		Sender:  sender,
+	}
+
+	err := s.chatRepository.CreateChat(chatMessage)
+	if err != nil {
+		return chatMessage, err
+	}
+	return chatMessage, nil
 }

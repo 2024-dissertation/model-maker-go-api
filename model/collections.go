@@ -5,7 +5,7 @@ import (
 )
 
 type Collection struct {
-	ID        uint       `gorm:"primaryKey"`
+	Id        uint       `gorm:"primaryKey"`
 	Name      string     `gorm:"type:text;not null"`
 	UserID    *uint      `gorm:"not null;index"`
 	CreatedAt time.Time  `gorm:"not null;default:now()"`
@@ -15,6 +15,6 @@ type Collection struct {
 }
 
 type CollectionTask struct {
-	CollectionID uint `gorm:"primaryKey"`
-	TaskID       uint `gorm:"primaryKey"`
+	CollectionId uint `gorm:"primaryKey"`
+	TaskId       uint `gorm:"primaryKey"`
 }

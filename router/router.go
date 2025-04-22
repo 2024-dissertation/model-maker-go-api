@@ -41,9 +41,11 @@ func NewRouter(
 	// Tasks (protected by AuthMiddleware)
 	authRequired.GET("/tasks", taskController.GetTasks)
 	authRequired.POST("/tasks", taskController.CreateTask)
+	authRequired.PUT("/tasks", taskController.UpdateTask)
 	authRequired.GET("/tasks/:taskID", taskController.GetTask)
 	authRequired.POST("/tasks/:taskID/upload", taskController.UploadFileToTask)
 	authRequired.POST("/tasks/:taskID/start", taskController.StartProcess)
+	authRequired.POST("/tasks/:taskID/message", taskController.SendMessage)
 
 	// Reports
 	authRequired.GET("/reports", reportsController.GetReports)

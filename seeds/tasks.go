@@ -10,7 +10,7 @@ func CreateTask(db *gorm.DB, title string, description string, completed bool, u
 		Title:       title,
 		Description: description,
 		Completed:   completed,
-		UserId:      userId,
+		UserId:      &userId,
 		Images:      []model.AppFile{},
 		Status:      "INITIAL",
 		Metadata:    map[string]interface{}{},

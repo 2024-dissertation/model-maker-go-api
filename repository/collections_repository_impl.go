@@ -16,7 +16,10 @@ func NewCollectionsRepository(db *gorm.DB) CollectionsRepository {
 
 func (repo *CollectionsRepositoryImpl) GetCollectionsByUser(userID uint) ([]models.Collection, error) {
 	var collections []models.Collection
-	if err := database.DB.Where("user_id = ?", userID).Find(&collections).Error; err != nil {
+	if err := database.DB.
+		Preload("Tasks").
+		Where("user_id = ?", userID).
+		Find(&collections).Error; err != nil {
 		return nil, err
 	}
 	return collections, nil
@@ -24,14 +27,20 @@ func (repo *CollectionsRepositoryImpl) GetCollectionsByUser(userID uint) ([]mode
 
 func (repo *CollectionsRepositoryImpl) GetCollectionByID(collectionID uint) (*models.Collection, error) {
 	var collection models.Collection
-	if err := database.DB.Model(&models.Collection{}).Where("id = ?", collectionID).First(&collection).Error; err != nil {
+	if err := database.DB.
+		Preload("Tasks").
+		Model(&models.Collection{}).
+		Where("id = ?", collectionID).
+		First(&collection).Error; err != nil {
 		return nil, err
 	}
 	return &collection, nil
 }
 
 func (repo *CollectionsRepositoryImpl) CreateCollection(collection *models.Collection) error {
-	if err := database.DB.Model(&models.Collection{}).Create(collection).Error; err != nil {
+	if err := database.DB.
+		Model(&models.Collection{}).
+		Create(collection).Error; err != nil {
 		return err
 	}
 	return nil
