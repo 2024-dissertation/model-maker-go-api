@@ -5,7 +5,7 @@ import (
 )
 
 type TaskRepository interface {
-	GetTasksByUser(userID uint) ([]models.Task, error)
+	GetTasksByUser(userID uint) ([]*models.Task, error)
 	GetTaskByID(taskID uint) (*models.Task, error)
 	CreateTask(task *models.Task) error
 	SaveTask(task *models.Task) error

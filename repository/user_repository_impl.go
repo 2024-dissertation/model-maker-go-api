@@ -32,3 +32,11 @@ func (repo *UserRepositoryImpl) Create(user *models.User) error {
 func (repo *UserRepositoryImpl) UpdateUser(user *models.User) error {
 	return repo.DB.Save(&user).Error
 }
+
+func (repo *UserRepositoryImpl) GetUsers() ([]*models.User, error) {
+	var users []*models.User
+	if err := database.DB.Find(&users).Error; err != nil {
+		return nil, err
+	}
+	return users, nil
+}

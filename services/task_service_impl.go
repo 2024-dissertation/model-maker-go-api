@@ -24,12 +24,12 @@ func NewTaskService(taskRepo repositories.TaskRepository, appFileService AppFile
 	return &TaskServiceImpl{taskRepo: taskRepo, appFileService: appFileService, chatRepository: chatRepository}
 }
 
-func (s *TaskServiceImpl) CreateTask(task *models.Task) (*models.Task, error) {
+func (s *TaskServiceImpl) CreateTask(task *models.Task) error {
 	err := s.taskRepo.CreateTask(task)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return task, nil
+	return nil
 }
 
 func (s *TaskServiceImpl) GetTask(taskID uint) (*models.Task, error) {
@@ -40,7 +40,7 @@ func (s *TaskServiceImpl) GetTask(taskID uint) (*models.Task, error) {
 	return task, nil
 }
 
-func (s *TaskServiceImpl) GetTasks(userID uint) ([]models.Task, error) {
+func (s *TaskServiceImpl) GetTasks(userID uint) ([]*models.Task, error) {
 
 	tasks, err := s.taskRepo.GetTasksByUser(userID)
 

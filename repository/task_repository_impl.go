@@ -14,9 +14,9 @@ func NewTaskRepository(db *gorm.DB) TaskRepository {
 	return &TaskRepositoryImpl{DB: db}
 }
 
-func (repo *TaskRepositoryImpl) GetTasksByUser(userID uint) ([]models.Task, error) {
+func (repo *TaskRepositoryImpl) GetTasksByUser(userID uint) ([]*models.Task, error) {
 	// Fetch tasks related to the user
-	var tasks []models.Task
+	var tasks []*models.Task
 	if err := database.DB.Where("user_id = ?", userID).Find(&tasks).Error; err != nil {
 		return nil, err
 	}

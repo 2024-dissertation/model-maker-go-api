@@ -17,14 +17,4 @@ ADD CONSTRAINT fk_chat_task FOREIGN KEY (task_id) REFERENCES tasks(id) ON DELETE
 -- +goose Down
 -- +goose StatementBegin
 
--- Revert the task_id change
-ALTER TABLE chats
-DROP CONSTRAINT IF EXISTS fk_chat_task;
-
-ALTER TABLE chats
-DROP COLUMN IF EXISTS task_id;
-
-ALTER TABLE chats
-ADD COLUMN user_id INTEGER;
-
 -- +goose StatementEnd

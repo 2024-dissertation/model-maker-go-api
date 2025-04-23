@@ -94,7 +94,7 @@ func (c *TaskController) CreateTask(ctx *gin.Context) {
 		Status:      "INITIAL",
 	}
 
-	createdTask, err := c.TaskService.CreateTask(task)
+	err := c.TaskService.CreateTask(task)
 
 	if err != nil {
 		log.Printf("Error creating task: %v", err)
@@ -102,7 +102,7 @@ func (c *TaskController) CreateTask(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusCreated, gin.H{"task": createdTask})
+	ctx.JSON(http.StatusCreated, gin.H{"task": task})
 }
 
 // UploadFileToTask handles file uploads for a task

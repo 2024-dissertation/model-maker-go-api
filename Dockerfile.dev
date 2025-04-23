@@ -1,7 +1,7 @@
 # -----------------------------------
 # Dev Image: All-in-one development
 # -----------------------------------
-FROM ubuntu:22.04
+FROM --platform=linux/amd64 ubuntu:22.04
 
 ENV DEBIAN_FRONTEND=noninteractive TZ=Europe/Minsk
 
@@ -13,6 +13,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libglew-dev libglfw3-dev coinor-libclp-dev libceres-dev \
     libcgal-dev libcgal-qt5-dev graphviz liblemon-dev \
     ca-certificates pkg-config \
+    g++-x86-64-linux-gnu libc6-dev-amd64-cross \
     vim nano && \
     
     rm -rf /var/lib/apt/lists/* && update-ca-certificates
@@ -44,7 +45,7 @@ RUN git clone --depth=1 https://github.com/cdcseacave/VCG.git /vcglib && \
 WORKDIR /app
 
 # Set PATH so you can use openMVG/openMVS from anywhere
-ENV PATH="/opt/openMVG_build/Linux-x86_64-RELEASE:/opt/openMVS_build/bin:$PATH"
+ENV PATH="/opt/openMVG_build/Linux-aarch64-RELEASE:/opt/openMVS_build/bin:$PATH"
 
 # RUN rm go.mod go.sum && \
 #     go mod init github.com/cdcseacave/photogrammetry && \
@@ -64,7 +65,10 @@ RUN wget https://go.dev/dl/go1.23.8.linux-amd64.tar.gz && \
 
 ENV PATH="$PATH:/usr/local/go/bin:/root/go/bin"
     
-RUN /usr/local/go/bin/go install github.com/pressly/goose/v3/cmd/goose@latest
+RUN /usr/local/go/bin/go install github.com/pressly/goose/v3/cmd/goose@latest && \
+    /usr/local/go/bin/go install github.com/joho/godotenv/cmd/godotenv@latest && \
+    /usr/local/go/bin/go install github.com/nikolaydubina/go-cover-treemap@latest
+
 
 EXPOSE 3333
 
