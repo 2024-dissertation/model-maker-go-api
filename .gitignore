@@ -33,5 +33,7 @@ bin/app
 uploads/*
 
 .env
-
+main
 SfM_SequentialPipeline.py
+
+cover.html
