@@ -51,14 +51,14 @@ func (s *TaskServiceImpl) GetTasks(userID uint) ([]*models.Task, error) {
 
 }
 
-func (s *TaskServiceImpl) UpdateTask(task *models.Task) (*models.Task, error) {
+func (s *TaskServiceImpl) UpdateTask(task *models.Task) error {
 
 	err := s.taskRepo.SaveTask(task)
 
 	if err != nil {
-		return nil, err
+		return err
 	}
-	return task, nil
+	return nil
 }
 
 func (s *TaskServiceImpl) UpdateMeta(task *models.Task, key string, value interface{}) error {
@@ -66,7 +66,7 @@ func (s *TaskServiceImpl) UpdateMeta(task *models.Task, key string, value interf
 		task.Metadata = make(map[string]interface{})
 	}
 	task.Metadata[key] = value
-	_, err := s.UpdateTask(task)
+	err := s.UpdateTask(task)
 	if err != nil {
 		return err
 	}
@@ -109,7 +109,7 @@ func (s *TaskServiceImpl) DeleteTask(taskID *models.Task) error {
 
 func (s *TaskServiceImpl) FailTask(task *models.Task) error {
 	task.Status = models.FAILED
-	_, err := s.UpdateTask(task)
+	err := s.UpdateTask(task)
 	if err != nil {
 		return err
 	}
@@ -127,7 +127,7 @@ func (s *TaskServiceImpl) RunPhotogrammetryProcess(task *models.Task) error {
 	mvsPath := filepath.Join(outputPath, "mvs")
 
 	task.Status = models.INPROGRESS
-	if _, err := s.UpdateTask(task); err != nil {
+	if err := s.UpdateTask(task); err != nil {
 		log.Printf("Failed to update task status to INPROGRESS: %v\n", err)
 		return err
 	}
@@ -308,7 +308,7 @@ func (s *TaskServiceImpl) RunPhotogrammetryProcess(task *models.Task) error {
 	task.Completed = true
 	task.Status = models.SUCCESS
 
-	if _, err := s.UpdateTask(task); err != nil {
+	if err := s.UpdateTask(task); err != nil {
 		log.Printf("Failed to update task: %v\n", err)
 		return err
 	}

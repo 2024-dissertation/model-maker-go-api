@@ -8,6 +8,7 @@ import (
 	models "github.com/Soup666/diss-api/model"
 	"github.com/Soup666/diss-api/services"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 )
 
 func TestTaskService(t *testing.T) {
@@ -101,5 +102,86 @@ func TestTaskService(t *testing.T) {
 		assert.NoError(t, err)
 		assert.NotNil(t, fetchedTasks)
 		assert.Equal(t, len(fetchedTasks), 2)
+	})
+
+	t.Run("UpdateTask", func(t *testing.T) {
+		task := &models.Task{
+			Title:       "Test Task",
+			Description: "This is a test task",
+		}
+
+		updatedTask := &models.Task{
+			Id:          1,
+			Title:       "Test Task",
+			Description: "This is a test task",
+		}
+
+		mockTaskRepository.On("SaveTask", task).Return(nil)
+
+		err := taskService.UpdateTask(task)
+
+		mockTaskRepository.AssertCalled(t, "SaveTask", task)
+		assert.NoError(t, err)
+		assert.NotNil(t, updatedTask)
+		assert.Equal(t, updatedTask.Id, uint(1))
+	})
+
+	t.Run("DeleteTask", func(t *testing.T) {
+		task := &models.Task{
+			Id:          1,
+			Title:       "Test Task",
+			Description: "This is a test task",
+		}
+
+		mockTaskRepository.On("ArchiveTask", task).Return(nil)
+
+		err := taskService.DeleteTask(task)
+
+		mockTaskRepository.AssertCalled(t, "ArchiveTask", task)
+		assert.NoError(t, err)
+	})
+
+	t.Run("SaveTask", func(t *testing.T) {
+		task := &models.Task{
+			Id:          1,
+			Title:       "Test Task",
+			Description: "This is a test task",
+		}
+
+		mockTaskRepository.On("SaveTask", task).Return(nil)
+
+		err := taskService.SaveTask(task)
+
+		mockTaskRepository.AssertCalled(t, "SaveTask", task)
+		assert.NoError(t, err)
+	})
+
+	t.Run("FailTask", func(t *testing.T) {
+		task := &models.Task{
+			Id:          1,
+			Title:       "Test Task",
+			Description: "This is a test task",
+		}
+
+		mockTaskRepository.On("SaveTask", task).Return(nil)
+
+		err := taskService.FailTask(task)
+
+		mockTaskRepository.AssertCalled(t, "SaveTask", task)
+		assert.NoError(t, err)
+		assert.Equal(t, task.Status, models.FAILED)
+	})
+
+	t.Run("SendMessage", func(t *testing.T) {
+
+		mockChatRepository.On("CreateChat", mock.Anything).Return(nil)
+
+		chat, err := taskService.SendMessage(uint(1), "Hello World", "USER")
+
+		mockChatRepository.AssertCalled(t, "CreateChat", mock.Anything)
+		assert.NoError(t, err)
+		assert.NotNil(t, chat)
+		assert.NotNil(t, chat.Id)
+		assert.Equal(t, chat.Message, "Hello World")
 	})
 }

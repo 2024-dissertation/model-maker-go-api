@@ -40,10 +40,8 @@ func (c *TaskController) GetTasks(ctx *gin.Context) {
 		return
 	}
 
-	// I dont like this being in a controller, but time constraints
-	if err := database.DB.Preload("Mesh", "file_type = ?", "mesh").Find(&tasks).Error; err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch tasks"})
-		return
+	for i := range tasks {
+		c.TaskService.FullyLoadTask(tasks[i])
 	}
 
 	ctx.JSON(200, gin.H{"tasks": tasks})
@@ -306,7 +304,7 @@ func (c *TaskController) UpdateTask(ctx *gin.Context) {
 	user := ctx.MustGet("user").(*model.User)
 	task.UserId = &user.Id
 
-	_, err := c.TaskService.UpdateTask(task)
+	err := c.TaskService.UpdateTask(task)
 	if err != nil {
 		ctx.AbortWithStatusJSON(400, gin.H{"error": err.Error()})
 		return

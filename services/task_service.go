@@ -8,7 +8,7 @@ type TaskService interface {
 	CreateTask(task *model.Task) error
 	GetTask(taskID uint) (*model.Task, error)
 	GetTasks(userID uint) ([]*model.Task, error)
-	UpdateTask(task *model.Task) (*model.Task, error)
+	UpdateTask(task *model.Task) error
 	DeleteTask(taskID *model.Task) error
 	SaveTask(task *model.Task) error
 	FailTask(task *model.Task) error

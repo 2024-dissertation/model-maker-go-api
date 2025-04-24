@@ -24,6 +24,22 @@ func (j JSONMap) Value() (driver.Value, error) {
 	return json.Marshal(j)
 }
 
+var TASK_JSON string = `{
+				"Id":0,
+				"CreatedAt":"0001-01-01T00:00:00Z",
+				"UpdatedAt":"0001-01-01T00:00:00Z",
+				"DeletedAt":null,
+				"Title":"",
+				"Description":"",
+				"Completed":false,
+				"Status":"",
+				"UserId":null,
+				"Images":null,
+				"Mesh":null,
+				"Metadata":null,
+				"ChatMessages":null
+			}`
+
 type Task struct {
 	Id           uint `gorm:"primaryKey"`
 	CreatedAt    time.Time

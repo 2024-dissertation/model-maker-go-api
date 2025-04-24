@@ -1,4 +1,4 @@
-package main
+package vision_test
 
 import (
 	"context"
