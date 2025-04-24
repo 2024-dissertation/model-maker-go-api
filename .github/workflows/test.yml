@@ -51,7 +51,7 @@ jobs:
 
       - name: Run tests
         env:
-          POSTGRES_USER: testuser
-          POSTGRES_PASSWORD: testpassword
-          POSTGRES_DB: testdb
-        run: godotenv -f .env.test go test ./... -cover fmt
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: changeme
+          POSTGRES_DB: appdb_test
+        run: godotenv -f .env.github go test ./... -cover fmt
