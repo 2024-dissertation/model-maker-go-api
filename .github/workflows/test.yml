@@ -5,6 +5,16 @@ on:
     branches:
       - main
   pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
 
 jobs:
   test:
@@ -35,8 +45,10 @@ jobs:
       - name: Install dependencies
         run: go mod tidy
 
-      - name: Install Godotenv
-        run: go install github.com/joho/godotenv/cmd/godotenv@latest
+      - name: Install Go Tools
+        run: |
+          go install github.com/joho/godotenv/cmd/godotenv@latest && \
+          go install github.com/nikolaydubina/go-cover-treemap@latest
 
       - name: Wait for PostgreSQL to be ready
         run: |
@@ -55,4 +67,16 @@ jobs:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: changeme
           POSTGRES_DB: appdb_test
-        run: godotenv -f .env.github go test ./... -cover fmt
+        run: |
+          godotenv -f .env.github go test -coverprofile=cp.out -coverpkg=$(PKGS) ./... &&
+          go tool cover -html=cp.out -o cover.html &&
+          go-cover-treemap -coverprofile=cp.out > out.svg
+      - name: Setup Pages
+        uses: actions/configure-pages@v2
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v1
+        with:
+          path: 'cover.html'
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v1

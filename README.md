@@ -1,5 +1,7 @@
 # Go Backend Rest Api for the project
 
+[![Go Tests](https://github.com/2024-dissertation/go-api/actions/workflows/test.yml/badge.svg)](https://github.com/2024-dissertation/go-api/actions/workflows/test.yml)
+
 ## New Method
 
 As of 17/01/25, migrations are now handled with [Goose](https://github.com/pressly/goose) and [Upper.io](https://upper.io/v4/adapter/postgresql/) Postgresql Adapter. 
