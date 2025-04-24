@@ -71,12 +71,18 @@ jobs:
           godotenv -f .env.github go test -coverprofile=cp.out -coverpkg=$(PKGS) ./... &&
           go tool cover -html=cp.out -o cover.html &&
           go-cover-treemap -coverprofile=cp.out > out.svg
-      - name: Setup Pages
-        uses: actions/configure-pages@v2
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v1
+        uses: actions/upload-pages-artifact@v3
         with:
           path: 'cover.html'
+  
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v1
+        uses: actions/deploy-pages@v4
