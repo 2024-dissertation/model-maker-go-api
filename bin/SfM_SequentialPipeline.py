@@ -17,8 +17,10 @@
 # if output_dir is not present script will create it
 #
 
+ARCHITECTURE = "x86_64"
+
 # Indicate the openMVG binary directory
-OPENMVG_SFM_BIN = "/opt/openMVG_build/Linux-aarch64-RELEASE"
+OPENMVG_SFM_BIN = "/opt/openMVG_build/Linux-" + ARCHITECTURE + "-RELEASE"
 
 # Indicate the openMVG camera sensor width directory
 CAMERA_SENSOR_WIDTH_DIRECTORY = "/opt/openMVG/src/software/SfM" + "/../../openMVG/exif/sensor_width_database"
