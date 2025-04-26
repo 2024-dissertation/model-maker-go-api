@@ -20,9 +20,8 @@ import (
 func main() {
 	// Set up the database connection
 	log.Println("Connecting to database...")
-	log.Println(os.Getenv("DATABASE_URL"))
 
-	db.ConnectDatabase(os.Getenv("DATABASE_URL"))
+	db.ConnectDatabase()
 
 	// Create a Firebase app instance
 	opt := option.WithCredentialsFile("./service-account-key.json")

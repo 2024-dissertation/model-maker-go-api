@@ -15,8 +15,8 @@ def convert_obj_to_glb(input_path, output_path):
     
     # Import obj file
     # bpy.ops.wm.obj_import
-    bpy.ops.import_scene.obj(filepath=input_path)
-    
+    bpy.ops.wm.obj_import(filepath=input_path)
+        
     # Select all objects
     bpy.ops.object.select_all(action='SELECT')
     

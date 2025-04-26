@@ -13,13 +13,17 @@ import (
 
 var DB *gorm.DB
 
-func ConnectDatabase(connectionString string) error {
+func ConnectDatabase() error {
+	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable TimeZone=%s", os.Getenv("DB_HOST"), os.Getenv("DB_PORT"), os.Getenv("DB_USER"), os.Getenv("DB_PASSWORD"), os.Getenv("DB_NAME"), os.Getenv("DB_TIMEZONE"))
+
 	var err error
-	DB, err = gorm.Open(postgres.Open(connectionString), &gorm.Config{})
+	DB, err = gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		log.Fatal("Error connecting to the database: ", err)
 		return err
 	}
+
+	log.Println("Connected to database", dsn)
 
 	return nil
 }
@@ -27,10 +31,8 @@ func ConnectDatabase(connectionString string) error {
 func SetupTestDB(t *testing.T) error {
 
 	log.Println("Connecting to database...")
-	log.Println(os.Getenv("DATABASE_URL"))
 
-	dsn := fmt.Sprintf("host=%s port=%s user=%s password=%s sslmode=disable TimeZone=%s", os.Getenv("DB_HOST"), os.Getenv("DB_PORT"), os.Getenv("DB_USER"), os.Getenv("DB_PASSWORD"), os.Getenv("DB_TIMEZONE"))
-	err := ConnectDatabase(dsn)
+	err := ConnectDatabase()
 
 	ResetTestDB()
 

@@ -15,9 +15,9 @@ def convert_ply_to_glb(input_path, output_path):
     
     # Select all objects
     bpy.ops.object.select_all(action='SELECT')
-    
+
     # Export as GLB
-    bpy.ops.export_scene.gltf(
+    bpy.ops.wm.export_scene.gltf(
         filepath=output_path,
         export_format='GLB',
         use_selection=True,

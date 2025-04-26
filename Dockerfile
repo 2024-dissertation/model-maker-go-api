@@ -1,17 +1,19 @@
 # ------------------------------
 # Stage 1: Build OpenMVG/OpenMVS
 # ------------------------------
-FROM ubuntu:22.04 AS openmvg_openmvs_builder
+FROM --platform=linux/amd64 ubuntu:latest AS builder
 
 ENV DEBIAN_FRONTEND=noninteractive TZ=Europe/Minsk
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    tzdata cmake build-essential git wget python3-dev \
-    libboost-all-dev libopencv-dev \
+    tzdata cmake build-essential git wget curl \
+    python3-dev libboost-all-dev libopencv-dev \
     libjpeg-dev libpng-dev libtiff-dev libglu1-mesa-dev \
     libglew-dev libglfw3-dev coinor-libclp-dev libceres-dev \
     libcgal-dev libcgal-qt5-dev graphviz liblemon-dev \
-    ca-certificates && \
+    ca-certificates pkg-config libxi6 \
+    g++-x86-64-linux-gnu libc6-dev-amd64-cross \
+    vim nano && \
     rm -rf /var/lib/apt/lists/* && update-ca-certificates
 
 RUN git clone --depth=1 https://github.com/cdcseacave/VCG.git /vcglib
@@ -34,38 +36,46 @@ RUN git clone --branch develop https://github.com/cdcseacave/openMVS.git /openMV
 # -------------------------
 # Stage 2: Build Go backend
 # -------------------------
-FROM golang:1.22-bookworm AS golang_builder
+FROM golang:tip-bookworm AS golang_builder
 
 WORKDIR /app
 COPY . .
 
-RUN go mod download && go mod vendor && \
-    go install github.com/pressly/goose/v3/cmd/goose@latest && \
-    go build -o server .
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o server
+RUN chmod +x ./server
+
+RUN go install github.com/pressly/goose/v3/cmd/goose@latest && \
+    go install github.com/joho/godotenv/cmd/godotenv@latest && \
+    go install github.com/nikolaydubina/go-cover-treemap@latest
 
 # ------------------------
 # Stage 3: Final Runtime
 # ------------------------
-FROM debian:bookworm-slim AS runtime
+FROM --platform=linux/amd64 ubuntu:latest AS runtime
 
 ENV DEBIAN_FRONTEND=noninteractive TZ=Europe/Minsk
 WORKDIR /app
 
-# Install runtime dependencies for OpenMVG/OpenMVS
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    libboost-system1.74.0 \
-    libboost-thread1.74.0 \
-    libboost-filesystem1.74.0 \
-    libboost-program-options1.74.0 \
-    libopencv-dev libjpeg-dev libpng-dev && \
-    rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y wget xz-utils libcgal-qt5-dev \
+    libceres-dev libboost-all-dev libopencv-dev build-essential && \
+    wget https://download.blender.org/release/Blender4.4/blender-4.4.0-linux-x64.tar.xz && \
+    mkdir -p /opt/blender && \
+    tar -xf blender-4.4.0-linux-x64.tar.xz -C /opt/blender --strip-components=1 && \
+    ln -s /opt/blender/blender /usr/local/bin/blender && \
+    rm blender-4.4.0-linux-x64.tar.xz && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Copy server binary
+COPY --from=golang_builder /go/bin /usr/local/bin
+COPY --from=golang_builder /app/db/migrations ./migrations
+COPY --from=golang_builder /app/Makefile .
 COPY --from=golang_builder /app/server .
+COPY --from=golang_builder /app/.env .
+COPY --from=golang_builder /app/.env.test .
 
 # Copy OpenMVG and OpenMVS executables
-COPY --from=openmvg_openmvs_builder /openMVG_build/Linux-x86_64-RELEASE /usr/local/bin
-COPY --from=openmvg_openmvs_builder /openMVS_build/bin /usr/local/bin
+COPY --from=builder /openMVG_build/Linux-x86_64-RELEASE /usr/local/bin
+COPY --from=builder /openMVS_build/bin /usr/local/bin
 
 # Update PATH so binaries can be found
 ENV PATH="/usr/local/bin/openMVG:/usr/local/bin/openMVS:$PATH"
@@ -74,4 +84,3 @@ EXPOSE 3333
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s CMD curl -f http://localhost:3333/health || exit 1
 
-ENTRYPOINT ["./server"]

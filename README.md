@@ -21,9 +21,16 @@ Other commands in the Makefile:
 The .env in app/ is necessary for Makefile to work. Structure is as follows:
 
 ```env
-DATABASE_URL=postgres://postgres:postgres@localhost:5432/appdb?sslmode=disable
+DB_HOST=db
+DB_NAME=appdb
+DB_PORT=5432
+DB_USER=postgres
+DB_PASSWORD=changeme
+DB_TIMEZONE=UTC
 
+PORT=3333
 MIGRATION_PATH=db/migrations
+GEMINI_API_KEY=
 ```
 
 This repo also contains a postres docker, but migrations are still handled through Goose and Go.

@@ -8,8 +8,13 @@ PKGS := github.com/Soup666/diss-api,github.com/Soup666/diss-api/cmd/vision,githu
 
 build-and-run: build run
 
+DSN=postgres://$(DB_USER):$(DB_PASSWORD)@$(DB_HOST):$(DB_PORT)/$(DB_NAME)?sslmode=disable&timezone=$(DB_TIMEZONE)
+
 build:
 	@CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o "${BIN_FILE}"
+
+dsn:
+	@echo "DSN: ${DSN}"
 
 clean:
 	go clean
@@ -21,9 +26,6 @@ run:
 
 test:
 	@godotenv -f .env.test go test ./... -cover fmt
-
-check:
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 godotenv -f .env.test go test ./...
 
 cover:
 	@echo "Running tests with coverage..."
@@ -39,19 +41,15 @@ lint:
 	golangci-lint run --enable-all
 
 run-seed:
-	@GOOSE_DRIVER=postgres GOOSE_DBSTRING=$(DATABASE_URL) goose -dir=$(MIGRATION_PATH) reset
-	@GOOSE_DRIVER=postgres GOOSE_DBSTRING=$(DATABASE_URL) goose -dir=$(MIGRATION_PATH) up
-	@CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go run seeder/seeder.go
+	@GOOSE_DBSTRING="${DSN}" goose -dir=$(MIGRATION_PATH) reset
+	@GOOSE_DBSTRING="${DSN}" goose -dir=$(MIGRATION_PATH) up
+	@godotenv -f .env  go run seeder/seeder.go
 
 db-status:
-	@GOOSE_DRIVER=postgres GOOSE_DBSTRING=$(DATABASE_URL) goose -dir=$(MIGRATION_PATH) status
+	@GOOSE_DBSTRING="${DSN}" goose -dir=$(MIGRATION_PATH) status
 
 up:
-	@GOOSE_DRIVER=postgres GOOSE_DBSTRING=$(DATABASE_URL) goose -dir=$(MIGRATION_PATH) up
+	@GOOSE_DBSTRING="${DSN}" goose -dir=$(MIGRATION_PATH) up
 
 reset:
-	@GOOSE_DRIVER=postgres GOOSE_DBSTRING=$(DATABASE_URL) goose -dir=$(MIGRATION_PATH) reset
-
-run-test:
-	- make test
-	- make open-test
+	@GOOSE_DBSTRING="${DSN}" goose -dir=$(MIGRATION_PATH) reset
