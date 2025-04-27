@@ -31,30 +31,12 @@ RUN git clone --branch develop https://github.com/cdcseacave/openMVS.git /openMV
             -DOpenMVG_DIR=/openMVG_build/src/openMVG/cmake/ \
             -DVCG_ROOT=/vcglib \
             /openMVS && \
-    make -j$(nproc)
+    make -j$(nproc)    
 
 # -------------------------
 # Stage 2: Build Go backend
 # -------------------------
-FROM golang:tip-bookworm AS golang_builder
-
-WORKDIR /app
-COPY . .
-
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o server
-RUN chmod +x ./server
-
-RUN go install github.com/pressly/goose/v3/cmd/goose@latest && \
-    go install github.com/joho/godotenv/cmd/godotenv@latest && \
-    go install github.com/nikolaydubina/go-cover-treemap@latest
-
-# ------------------------
-# Stage 3: Final Runtime
-# ------------------------
-FROM --platform=linux/amd64 ubuntu:latest AS runtime
-
-ENV DEBIAN_FRONTEND=noninteractive TZ=Europe/Minsk
-WORKDIR /app
+FROM --platform=linux/amd64 ubuntu:latest AS final
 
 RUN apt-get update && apt-get install -y wget xz-utils libcgal-qt5-dev \
     libceres-dev libboost-all-dev libopencv-dev build-essential && \
@@ -63,24 +45,28 @@ RUN apt-get update && apt-get install -y wget xz-utils libcgal-qt5-dev \
     tar -xf blender-4.4.0-linux-x64.tar.xz -C /opt/blender --strip-components=1 && \
     ln -s /opt/blender/blender /usr/local/bin/blender && \
     rm blender-4.4.0-linux-x64.tar.xz && \
+    wget https://go.dev/dl/go1.23.8.linux-amd64.tar.gz && \
+    tar -C /usr/local -xzf go1.23.8.linux-amd64.tar.gz && \
+    rm -rf go1.23.8.linux-amd64.tar.gz && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Copy server binary
-COPY --from=golang_builder /go/bin /usr/local/bin
-COPY --from=golang_builder /app/db/migrations ./migrations
-COPY --from=golang_builder /app/Makefile .
-COPY --from=golang_builder /app/server .
-COPY --from=golang_builder /app/.env .
-COPY --from=golang_builder /app/.env.test .
+WORKDIR /app
+COPY . .
 
-# Copy OpenMVG and OpenMVS executables
+# RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o server
+# RUN chmod +x ./server
+
 COPY --from=builder /openMVG_build/Linux-x86_64-RELEASE /usr/local/bin
 COPY --from=builder /openMVS_build/bin /usr/local/bin
 
-# Update PATH so binaries can be found
-ENV PATH="/usr/local/bin/openMVG:/usr/local/bin/openMVS:$PATH"
+ENV PATH="$PATH:/usr/local/go/bin:/root/go/bin"
+
+
+RUN go install github.com/pressly/goose/v3/cmd/goose@latest && \
+    go install github.com/joho/godotenv/cmd/godotenv@latest && \
+    go install github.com/nikolaydubina/go-cover-treemap@latest
+
 
 EXPOSE 3333
 
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s CMD curl -f http://localhost:3333/health || exit 1
-
+CMD ["bash"]
