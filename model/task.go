@@ -4,7 +4,6 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"errors"
-	"time"
 
 	"gorm.io/gorm"
 )
@@ -37,21 +36,20 @@ var TASK_JSON string = `{
 				"Images":null,
 				"Mesh":null,
 				"Metadata":null,
-				"ChatMessages":null
+				"ChatMessages":null,
+				"Logs":null
 			}`
 
 type Task struct {
-	Id           uint `gorm:"primaryKey"`
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
-	DeletedAt    gorm.DeletedAt `gorm:"index"`
+	gorm.Model
 	Title        string
 	Description  string
 	Completed    bool
 	Status       TaskStatus `gorm:"type:TaskStatus"`
-	UserId       *uint
+	UserId       uint
 	Images       []AppFile     `gorm:"foreignKey:TaskId"`
 	Mesh         *AppFile      `gorm:"foreignKey:TaskId"`
 	Metadata     JSONMap       `gorm:"type:json" json:"Metadata"`
 	ChatMessages []ChatMessage `gorm:"foreignKey:TaskId"`
+	Logs         []TaskLog     `gorm:"foreignKey:TaskId"`
 }

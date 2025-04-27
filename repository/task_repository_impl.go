@@ -25,7 +25,7 @@ func (repo *TaskRepositoryImpl) GetTasksByUser(userID uint) ([]*models.Task, err
 
 func (repo *TaskRepositoryImpl) GetTaskByID(taskID uint) (*models.Task, error) {
 	var task models.Task
-	if err := database.DB.Where("id = ?", taskID).First(&task).Error; err != nil {
+	if err := database.DB.Where("id = ?", taskID).Preload("ChatMessages").Preload("Images").First(&task).Error; err != nil {
 		return nil, err
 	}
 	return &task, nil
@@ -48,6 +48,25 @@ func (repo *TaskRepositoryImpl) SaveTask(task *models.Task) error {
 
 func (repo *TaskRepositoryImpl) ArchiveTask(task *models.Task) error {
 	if err := database.DB.Delete(task).Error; err != nil {
+		return err
+	}
+	return nil
+}
+
+func (repo *TaskRepositoryImpl) AddLog(taskID uint, log string) error {
+	task, err := repo.GetTaskByID(taskID)
+	if err != nil {
+		return err
+	}
+
+	newLog := models.TaskLog{
+		TaskId:  task.ID,
+		Message: log,
+	}
+
+	task.Logs = append(task.Logs, newLog)
+
+	if err := database.DB.Save(task).Error; err != nil {
 		return err
 	}
 	return nil

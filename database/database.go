@@ -23,6 +23,13 @@ func ConnectDatabase() error {
 		return err
 	}
 
+	err = MigrateScheme()
+
+	if err != nil {
+		log.Fatal("Failed to migrate test DB: ", err)
+		return err
+	}
+
 	log.Println("Connected to database", dsn)
 
 	return nil
@@ -41,6 +48,26 @@ func SetupTestDB(t *testing.T) error {
 		return err
 	}
 
+	err = MigrateScheme()
+
+	if err != nil {
+		t.Fatalf("Failed to migrate test DB: %v", err)
+		return err
+	}
+	return nil
+}
+
+func ResetTestDB() {
+	log.Println("Resetting test database...")
+
+	tables := []string{"users", "tasks", "reports", "collections"}
+	for _, table := range tables {
+		truncateTableCommand := fmt.Sprintf("TRUNCATE TABLE %s RESTART IDENTITY CASCADE", table)
+		DB.Exec(truncateTableCommand)
+	}
+}
+
+func MigrateScheme() error {
 	createEnumCommand := `
 	--create types
 DO $$
@@ -62,21 +89,12 @@ END$$;
 
 	DB.Exec(createEnumCommand)
 
-	err = DB.AutoMigrate(&model.User{}, &model.Task{}, &model.Report{}, &model.Collection{})
-
+	err := DB.AutoMigrate(&model.User{}, &model.Task{}, &model.Report{}, &model.Collection{}, &model.ChatMessage{}, &model.AppFile{}, &model.TaskLog{})
 	if err != nil {
-		t.Fatalf("Failed to migrate test DB: %v", err)
+		log.Fatalf("Failed to migrate test DB: %v", err)
 		return err
 	}
+
+	log.Println("Database migrated successfully")
 	return nil
-}
-
-func ResetTestDB() {
-	log.Println("Resetting test database...")
-
-	tables := []string{"users", "tasks", "reports", "collections"}
-	for _, table := range tables {
-		truncateTableCommand := fmt.Sprintf("TRUNCATE TABLE %s RESTART IDENTITY CASCADE", table)
-		DB.Exec(truncateTableCommand)
-	}
 }

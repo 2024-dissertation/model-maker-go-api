@@ -10,4 +10,5 @@ type TaskRepository interface {
 	CreateTask(task *models.Task) error
 	SaveTask(task *models.Task) error
 	ArchiveTask(task *models.Task) error
+	AddLog(taskID uint, log string) error
 }

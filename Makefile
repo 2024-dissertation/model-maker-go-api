@@ -41,9 +41,7 @@ lint:
 	golangci-lint run --enable-all
 
 run-seed:
-	@GOOSE_DBSTRING="${DSN}" goose -dir=$(MIGRATION_PATH) reset
-	@GOOSE_DBSTRING="${DSN}" goose -dir=$(MIGRATION_PATH) up
-	@godotenv -f .env  go run seeder/seeder.go
+	@godotenv -f .env  go run seeds/bin/seeder.go
 
 db-status:
 	@GOOSE_DBSTRING="${DSN}" goose -dir=$(MIGRATION_PATH) status

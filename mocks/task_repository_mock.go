@@ -54,3 +54,12 @@ func (m *MockTaskRepository) ArchiveTask(task *models.Task) error {
 	}
 	return nil
 }
+
+func (m *MockTaskRepository) AddLog(taskID uint, log string) error {
+	args := m.Called(taskID, log)
+
+	if args.Get(0) != nil {
+		return args.Error(0)
+	}
+	return nil
+}

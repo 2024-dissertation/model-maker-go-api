@@ -24,16 +24,15 @@ func TestTaskService(t *testing.T) {
 		var userId = uint(1)
 
 		task := &models.Task{
-			Id:          1,
 			Title:       "Test Task",
 			Description: "This is a test task",
-			UserId:      &userId,
+			UserId:      userId,
 		}
 
 		mockTaskRepository.On("CreateTask", task).Return(nil)
 		mockTaskRepository.On("CreateTask", nil).Return(errors.New("error"))
 		mockTaskRepository.On("CreateTask", &models.Task{}).Return(errors.New("error"))
-		mockTaskRepository.On("CreateTask", &models.Task{Id: 1}).Return(nil)
+		mockTaskRepository.On("CreateTask", &models.Task{ID: 1}).Return(nil)
 
 		err := taskService.CreateTask(task)
 
@@ -46,7 +45,6 @@ func TestTaskService(t *testing.T) {
 
 	t.Run("GetTask", func(t *testing.T) {
 		task := &models.Task{
-			Id:          1,
 			Title:       "Test Task",
 			Description: "This is a test task",
 		}
@@ -83,13 +81,13 @@ func TestTaskService(t *testing.T) {
 				Id:          1,
 				Title:       "Test Task",
 				Description: "This is a test task",
-				UserId:      &userId,
+				UserId:      userId,
 			},
 			{
 				Id:          2,
 				Title:       "Test Task 2",
 				Description: "This is a test task 2",
-				UserId:      &userId,
+				UserId:      userId,
 			},
 		}
 
@@ -165,7 +163,7 @@ func TestTaskService(t *testing.T) {
 
 		mockTaskRepository.On("SaveTask", task).Return(nil)
 
-		err := taskService.FailTask(task)
+		err := taskService.FailTask(task, "Failed due to an error")
 
 		mockTaskRepository.AssertCalled(t, "SaveTask", task)
 		assert.NoError(t, err)

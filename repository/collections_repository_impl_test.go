@@ -35,7 +35,7 @@ func TestCollectionsRepository(t *testing.T) {
 	collection := &model.Collection{
 		Name:   "Test Collection",
 		Tasks:  []model.Task{},
-		UserID: &user.Id,
+		UserID: user.Id,
 	}
 
 	err = repo.CreateCollection(collection)

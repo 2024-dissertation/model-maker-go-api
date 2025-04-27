@@ -7,6 +7,8 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+
+	"github.com/bodgit/sevenzip"
 )
 
 type FileUtil struct{}
@@ -79,4 +81,59 @@ func (f *FileUtil) ExtractTarGz(gzipStream io.Reader, destDir string) error {
 			fmt.Printf("Unknown type: %v in %s\n", header.Typeflag, header.Name)
 		}
 	}
+}
+
+func extractFile(file *sevenzip.File, destDir string) error {
+	rc, err := file.Open()
+	if err != nil {
+		return err
+	}
+	defer rc.Close()
+
+	// Extract the file
+	targetPath := filepath.Join(destDir, file.Name)
+	if err := os.MkdirAll(filepath.Dir(targetPath), 0755); err != nil {
+		return err
+	}
+	outFile, err := os.Create(targetPath)
+	if err != nil {
+		return err
+	}
+	defer outFile.Close()
+
+	if _, err := io.Copy(outFile, rc); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (f *FileUtil) Extract7z(archive string, destDir string) error {
+	r, err := sevenzip.OpenReader(archive)
+	if err != nil {
+		return err
+	}
+	defer r.Close()
+
+	for _, f := range r.File {
+		fmt.Printf("Extracting %s\n", f.Name)
+
+		targetPath := filepath.Join(destDir, f.Name)
+
+		if f.FileInfo().IsDir() {
+			if err := os.MkdirAll(targetPath, f.Mode()); err != nil {
+				return err
+			}
+			continue
+		}
+
+		if err := os.MkdirAll(filepath.Dir(targetPath), 0755); err != nil {
+			return err
+		}
+
+		if err = extractFile(f, destDir); err != nil {
+			return err
+		}
+	}
+	return nil
 }

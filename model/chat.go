@@ -2,6 +2,8 @@ package model
 
 import (
 	"time"
+
+	"gorm.io/gorm"
 )
 
 var CHAT_MESSAGE_JSON string = `{
@@ -13,8 +15,9 @@ var CHAT_MESSAGE_JSON string = `{
 			}`
 
 type ChatMessage struct {
+	gorm.Model
 	Id        uint      `gorm:"primaryKey"`
-	TaskId    uint      `gorm:"not null;index"`
+	TaskId    uint      `gorm:"not null"` // Foreign key
 	Sender    string    `gorm:"type:text;not null;check:sender IN ('USER','AI')"`
 	Message   string    `gorm:"type:text;not null"`
 	CreatedAt time.Time `gorm:"not null;default:now()"`

@@ -36,7 +36,7 @@ func TestReportsRepository(t *testing.T) {
 		Title:      "test_report",
 		Rating:     5,
 		Body:       "test_body",
-		UserID:     &user.Id,
+		UserID:     user.Id,
 		ReportType: "BUG",
 	}
 

@@ -58,8 +58,8 @@ func (m *MockTaskService) SaveTask(task *models.Task) error {
 	return nil
 }
 
-func (m *MockTaskService) FailTask(task *models.Task) error {
-	args := m.Called(task)
+func (m *MockTaskService) FailTask(task *models.Task, message string) error {
+	args := m.Called(task, message)
 	if args.Get(0) != nil {
 
 		return args.Get(0).(error)
@@ -97,4 +97,12 @@ func (m *MockTaskService) SendMessage(taskID uint, message string, sender string
 		return args.Get(0).(*models.ChatMessage), args.Error(1)
 	}
 	return nil, args.Error(1)
+}
+
+func (m *MockTaskService) AddLog(taskID uint, log string) error {
+	args := m.Called(taskID, log)
+	if args.Get(0) != nil {
+		return args.Get(0).(error)
+	}
+	return nil
 }

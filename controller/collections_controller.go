@@ -26,7 +26,7 @@ func (c *CollectionsController) CreateCollection(ctx *gin.Context) {
 	}
 
 	user := ctx.MustGet("user").(*model.User)
-	collection.UserID = &user.Id
+	collection.UserID = user.Id
 
 	err := c.collectionsService.CreateCollection(collection)
 	if err != nil {
@@ -93,7 +93,7 @@ func (c *CollectionsController) SaveCollection(ctx *gin.Context) {
 	}
 
 	user := ctx.MustGet("user").(*model.User)
-	collection.UserID = &user.Id
+	collection.UserID = user.Id
 
 	err := c.collectionsService.SaveCollection(collection)
 	if err != nil {

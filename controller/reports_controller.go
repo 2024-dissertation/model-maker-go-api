@@ -58,7 +58,7 @@ func (c *ReportsController) CreateReport(ctx *gin.Context) {
 	}
 
 	user := ctx.MustGet("user").(*model.User)
-	report.UserID = &user.Id
+	report.UserID = user.Id
 
 	err := c.reportsService.CreateReport(report)
 	if err != nil {

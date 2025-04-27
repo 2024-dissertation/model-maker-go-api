@@ -28,7 +28,7 @@ func TestTaskRepository(t *testing.T) {
 	}
 	err = repo.CreateTask(task)
 	assert.NoError(t, err)
-	assert.NotZero(t, task.Id)
+	assert.NotZero(t, task.ID)
 
 	// Test GetTaskByID
 	fetchedTask, err := repo.GetTaskByID(1)
