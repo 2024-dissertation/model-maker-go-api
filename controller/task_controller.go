@@ -354,15 +354,22 @@ func (c *TaskController) SendMessage(ctx *gin.Context) {
 
 		if _, err := os.Stat(imagePath); os.IsNotExist(err) {
 			log.Printf("Image file does not exist: %v\n", err)
+
+			aiMessage, err := c.VisionService.GenerateMessage(fmt.Sprintf("You are a help bot for photogrammetry software. The user has asked you: %s. Please answer in a friendly and helpful manner. Keep the answer short and to the point. Do not use any technical terms. If you don't know the answer, say 'I don't know'.", message.Message))
+
+			if err != nil {
+				log.Printf("Failed to handle vision message: %v\n", err)
+			}
+			c.TaskService.SendMessage(uint(taskIdInt), aiMessage, "AI")
 			return
-		}
+		} else {
+			aiMessage, err := c.VisionService.AnalyseImage(imagePath, fmt.Sprintf("You are a help bot for photogrammetry software. The user has asked you: %s. Please answer in a friendly and helpful manner. Keep the answer short and to the point. Do not use any technical terms. If you don't know the answer, say 'I don't know'. Also sent is a screenshot of the object the user is scanning.", message.Message))
 
-		aiMessage, err := c.VisionService.AnalyseImage(imagePath, fmt.Sprintf("You are a help bot for photogrammetry software. The user has asked you: %s. Please answer in a friendly and helpful manner. Keep the answer short and to the point. Do not use any technical terms. If you don't know the answer, say 'I don't know'. Also sent is a screenshot of the object the user is scanning.", message.Message))
-
-		if err != nil {
-			log.Printf("Failed to handle vision message: %v\n", err)
+			if err != nil {
+				log.Printf("Failed to handle vision message: %v\n", err)
+			}
+			c.TaskService.SendMessage(uint(taskIdInt), aiMessage, "AI")
 		}
-		c.TaskService.SendMessage(uint(taskIdInt), aiMessage, "AI")
 	}(uint(taskIdInt))
 
 	ctx.JSON(http.StatusOK, gin.H{"message": message})
