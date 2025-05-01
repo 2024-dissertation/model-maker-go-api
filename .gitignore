@@ -37,3 +37,6 @@ main
 SfM_SequentialPipeline.py
 
 cover.html
+
+*.7z
+*.gz
