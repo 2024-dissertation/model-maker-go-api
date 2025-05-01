@@ -36,12 +36,14 @@ func main() {
 		log.Fatalf("Failed to create Firebase auth client: %v", err)
 	}
 
+	// Set up the repositories
 	userRepo := repositories.NewUserRepository(db.DB)
 	taskRepo := repositories.NewTaskRepository(db.DB)
 	appFileRepo := repositories.NewAppFileRepository(db.DB)
 	reportsRepo := repositories.NewReportsRepository(db.DB)
 	collectionsRepo := repositories.NewCollectionsRepository(db.DB)
 	chatRepo := repositories.NewChatRepository(db.DB)
+	userAnalyticsRepo := repositories.NewUserAnalyticsRepository(db.DB)
 
 	// Set up the authentication service
 	authService := services.NewAuthService(authClient, db.DB, userRepo)
@@ -51,6 +53,7 @@ func main() {
 	visionService := services.NewVisionService()
 	reportsService := services.NewReportsService(reportsRepo)
 	collectionsService := services.NewCollectionsService(collectionsRepo)
+	userAnalyticsService := services.NewUserAnalyticsService(userAnalyticsRepo)
 
 	authController := controller.NewAuthController(authService, userService)
 	taskController := controller.NewTaskController(taskService, appFileService, visionService)
@@ -59,9 +62,10 @@ func main() {
 	visionController := controller.NewVisionController(visionService, taskRepo, taskService)
 	reportsController := controller.NewReportsController(reportsService)
 	collectionsController := controller.NewCollectionsController(collectionsService)
+	userAnalyticsController := controller.NewUserAnalyticsController(userAnalyticsService)
 
 	// Set up the HTTP router
-	r := router.NewRouter(authController, taskController, uploadController, objectController, visionController, authService, reportsController, collectionsController)
+	r := router.NewRouter(authController, taskController, uploadController, objectController, visionController, authService, reportsController, collectionsController, userAnalyticsController)
 
 	// Start the server
 	if r.Run(":"+os.Getenv("PORT")) != nil {

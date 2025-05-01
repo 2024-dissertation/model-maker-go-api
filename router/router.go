@@ -20,6 +20,7 @@ func NewRouter(
 	authService services.AuthService,
 	reportsController *controller.ReportsController,
 	collectionsController *controller.CollectionsController,
+	userAnalyticsController *controller.UserAnalyticsController,
 ) *gin.Engine {
 
 	r := gin.Default()
@@ -46,6 +47,9 @@ func NewRouter(
 	authRequired.POST("/tasks/:taskID/upload", taskController.UploadFileToTask)
 	authRequired.POST("/tasks/:taskID/start", taskController.StartProcess)
 	authRequired.POST("/tasks/:taskID/message", taskController.SendMessage)
+
+	// Anlytics
+	authRequired.GET("/analytics", userAnalyticsController.GetAnalytics)
 
 	// Reports
 	authRequired.GET("/reports", reportsController.GetReports)

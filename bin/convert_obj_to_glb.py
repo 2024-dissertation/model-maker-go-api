@@ -4,6 +4,8 @@
 import bpy
 import sys
 import os
+from math import radians
+from mathutils import Vector
 
 print ("Blender version:", bpy.app.version_string)
 print ("PBYTHON version:", bpy.app)
@@ -16,6 +18,13 @@ def convert_obj_to_glb(input_path, output_path):
     # Import obj file
     # bpy.ops.wm.obj_import
     bpy.ops.wm.obj_import(filepath=input_path)
+
+    for obj in bpy.context.scene.objects:
+        obj.rotation_euler[1] += radians(90)  # 90 degrees in radians
+
+    bbox_corners = [obj.matrix_world @ Vector(corner) for corner in obj.bound_box]
+    center = sum(bbox_corners, Vector()) / 8
+    obj.location -= center
         
     # Select all objects
     bpy.ops.object.select_all(action='SELECT')
