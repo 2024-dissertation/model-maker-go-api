@@ -132,6 +132,12 @@ func (s *TaskServiceImpl) FailTask(task *models.Task, message string) error {
 }
 
 func (s *TaskServiceImpl) RunPhotogrammetryProcess(task *models.Task) error {
+
+	if task.Status == models.INPROGRESS {
+		log.Printf("Task %d is already in progress\n", task.ID)
+		return nil
+	}
+
 	startTime := time.Now()
 
 	TASK_COUNT := 7.0
