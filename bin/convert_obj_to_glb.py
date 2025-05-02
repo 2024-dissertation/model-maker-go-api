@@ -28,6 +28,22 @@ def convert_obj_to_glb(input_path, output_path):
         
     # Select all objects
     bpy.ops.object.select_all(action='SELECT')
+
+    # Apply Decimate modifier to reduce polygon count
+    count = 0
+    for obj in bpy.context.scene.objects:
+        if count > 25:
+            break
+        count += 1
+        if obj.type == 'MESH':
+            target_vertex_count = 50000
+            current_vertex_count = len(obj.data.vertices)
+            
+            if current_vertex_count > target_vertex_count:
+                modifier = obj.modifiers.new(name="Decimate", type='DECIMATE')
+                modifier.ratio = target_vertex_count / current_vertex_count
+                bpy.context.view_layer.objects.active = obj
+                bpy.ops.object.modifier_apply(modifier="Decimate")
     
     # Export as GLB
     bpy.ops.export_scene.gltf(
