@@ -18,6 +18,14 @@ func (m *MockTaskService) CreateTask(task *models.Task) error {
 	return nil
 }
 
+func (m *MockTaskService) GetUnarchivedTasks(taskID uint) ([]*models.Task, error) {
+	args := m.Called(taskID)
+	if args.Get(0) != nil {
+		return args.Get(0).([]*models.Task), args.Error(1)
+	}
+	return nil, args.Error(1)
+}
+
 func (m *MockTaskService) GetTask(taskID uint) (*models.Task, error) {
 	args := m.Called(taskID)
 	if args.Get(0) != nil {
@@ -26,8 +34,8 @@ func (m *MockTaskService) GetTask(taskID uint) (*models.Task, error) {
 	return nil, args.Error(1)
 }
 
-func (m *MockTaskService) GetTasks(userID uint) ([]*models.Task, error) {
-	args := m.Called(userID)
+func (m *MockTaskService) GetArchivedTasks(taskID uint) ([]*models.Task, error) {
+	args := m.Called(taskID)
 	if args.Get(0) != nil {
 		return args.Get(0).([]*models.Task), args.Error(1)
 	}
@@ -42,12 +50,12 @@ func (m *MockTaskService) UpdateTask(task *models.Task) error {
 	return nil
 }
 
-func (m *MockTaskService) DeleteTask(taskID *models.Task) error {
+func (m *MockTaskService) ArchiveTask(taskID uint) (*models.Task, error) {
 	args := m.Called(taskID)
 	if args.Get(0) != nil {
-		return args.Get(0).(error)
+		return nil, args.Get(0).(error)
 	}
-	return nil
+	return nil, args.Get(0).(error)
 }
 
 func (m *MockTaskService) SaveTask(task *models.Task) error {

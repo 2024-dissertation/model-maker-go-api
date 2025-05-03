@@ -10,7 +10,16 @@ type MockTaskRepository struct {
 	mock.Mock
 }
 
-func (m *MockTaskRepository) GetTasksByUser(userID uint) ([]*models.Task, error) {
+func (m *MockTaskRepository) GetArchivedTasks(userID uint) ([]*models.Task, error) {
+	args := m.Called(userID)
+
+	if args.Get(0) != nil {
+		return args.Get(0).([]*models.Task), args.Error(1)
+	}
+	return nil, args.Error(1)
+}
+
+func (m *MockTaskRepository) GetUnarchivedTasks(userID uint) ([]*models.Task, error) {
 	args := m.Called(userID)
 
 	if args.Get(0) != nil {
@@ -46,13 +55,13 @@ func (m *MockTaskRepository) SaveTask(task *models.Task) error {
 	return nil
 }
 
-func (m *MockTaskRepository) ArchiveTask(task *models.Task) error {
+func (m *MockTaskRepository) ArchiveTask(task uint) (*models.Task, error) {
 	args := m.Called(task)
 
 	if args.Get(0) != nil {
-		return args.Error(0)
+		return nil, args.Error(0)
 	}
-	return nil
+	return nil, args.Error(0)
 }
 
 func (m *MockTaskRepository) AddLog(taskID uint, log string) error {

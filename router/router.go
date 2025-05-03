@@ -40,13 +40,15 @@ func NewRouter(
 	authRequired.PATCH("/verify", authController.Verify)
 
 	// Tasks (protected by AuthMiddleware)
-	authRequired.GET("/tasks", taskController.GetTasks)
+	authRequired.GET("/tasks", taskController.GetUnarchivedTasks)
+	authRequired.GET("/archived/tasks", taskController.GetUnarchivedTasks)
 	authRequired.POST("/tasks", taskController.CreateTask)
 	authRequired.PUT("/tasks", taskController.UpdateTask)
 	authRequired.GET("/tasks/:taskID", taskController.GetTask)
 	authRequired.POST("/tasks/:taskID/upload", taskController.UploadFileToTask)
 	authRequired.POST("/tasks/:taskID/start", taskController.StartProcess)
 	authRequired.POST("/tasks/:taskID/message", taskController.SendMessage)
+	authRequired.POST("/tasks/:taskID/archive", taskController.ArchiveTask)
 
 	// Anlytics
 	authRequired.GET("/analytics", userAnalyticsController.GetAnalytics)

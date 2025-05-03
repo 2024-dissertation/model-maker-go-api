@@ -39,7 +39,7 @@ func TestTaskService(t *testing.T) {
 		mockTaskRepository.AssertCalled(t, "CreateTask", task)
 		assert.NoError(t, err)
 		assert.NotNil(t, task)
-		assert.NotNil(t, task.Id)
+		assert.NotNil(t, task.ID)
 		assert.Equal(t, task.Title, "Test Task")
 	})
 
@@ -72,19 +72,19 @@ func TestTaskService(t *testing.T) {
 		assert.Equal(t, err.Error(), "error")
 	})
 
-	t.Run("GetTasks", func(t *testing.T) {
+	t.Run("GetUnarchivedTasks", func(t *testing.T) {
 
 		var userId = uint(1)
 
 		tasks := []*models.Task{
 			{
-				Id:          1,
+				ID:          1,
 				Title:       "Test Task",
 				Description: "This is a test task",
 				UserId:      userId,
 			},
 			{
-				Id:          2,
+				ID:          2,
 				Title:       "Test Task 2",
 				Description: "This is a test task 2",
 				UserId:      userId,
@@ -94,7 +94,7 @@ func TestTaskService(t *testing.T) {
 		mockTaskRepository.On("GetTasksByUser", userId).Return(tasks, nil)
 		mockTaskRepository.On("GetTasksByUser", uint(2)).Return(nil, errors.New("error"))
 
-		fetchedTasks, err := taskService.GetTasks(userId)
+		fetchedTasks, err := taskService.GetUnarchivedTasks(userId)
 
 		mockTaskRepository.AssertCalled(t, "GetTasksByUser", userId)
 		assert.NoError(t, err)
@@ -109,7 +109,7 @@ func TestTaskService(t *testing.T) {
 		}
 
 		updatedTask := &models.Task{
-			Id:          1,
+			ID:          1,
 			Title:       "Test Task",
 			Description: "This is a test task",
 		}
@@ -121,19 +121,19 @@ func TestTaskService(t *testing.T) {
 		mockTaskRepository.AssertCalled(t, "SaveTask", task)
 		assert.NoError(t, err)
 		assert.NotNil(t, updatedTask)
-		assert.Equal(t, updatedTask.Id, uint(1))
+		assert.Equal(t, updatedTask.ID, uint(1))
 	})
 
 	t.Run("DeleteTask", func(t *testing.T) {
 		task := &models.Task{
-			Id:          1,
+			ID:          1,
 			Title:       "Test Task",
 			Description: "This is a test task",
 		}
 
 		mockTaskRepository.On("ArchiveTask", task).Return(nil)
 
-		err := taskService.DeleteTask(task)
+		task, err := taskService.ArchiveTask(1)
 
 		mockTaskRepository.AssertCalled(t, "ArchiveTask", task)
 		assert.NoError(t, err)
@@ -141,7 +141,7 @@ func TestTaskService(t *testing.T) {
 
 	t.Run("SaveTask", func(t *testing.T) {
 		task := &models.Task{
-			Id:          1,
+			ID:          1,
 			Title:       "Test Task",
 			Description: "This is a test task",
 		}
@@ -156,7 +156,7 @@ func TestTaskService(t *testing.T) {
 
 	t.Run("FailTask", func(t *testing.T) {
 		task := &models.Task{
-			Id:          1,
+			ID:          1,
 			Title:       "Test Task",
 			Description: "This is a test task",
 		}

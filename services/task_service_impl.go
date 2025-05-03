@@ -49,15 +49,24 @@ func (s *TaskServiceImpl) GetTask(taskID uint) (*models.Task, error) {
 	return task, nil
 }
 
-func (s *TaskServiceImpl) GetTasks(userID uint) ([]*models.Task, error) {
+func (s *TaskServiceImpl) GetUnarchivedTasks(userID uint) ([]*models.Task, error) {
 
-	tasks, err := s.taskRepo.GetTasksByUser(userID)
+	tasks, err := s.taskRepo.GetUnarchivedTasks(userID)
 
 	if err != nil {
 		return nil, err
 	}
 	return tasks, nil
+}
 
+func (s *TaskServiceImpl) GetArchivedTasks(userID uint) ([]*models.Task, error) {
+
+	tasks, err := s.taskRepo.GetArchivedTasks(userID)
+
+	if err != nil {
+		return nil, err
+	}
+	return tasks, nil
 }
 
 func (s *TaskServiceImpl) UpdateTask(task *models.Task) error {
@@ -82,33 +91,18 @@ func (s *TaskServiceImpl) UpdateMeta(task *models.Task, key string, value interf
 	return nil
 }
 
-func (s *TaskServiceImpl) ArchiveTask(taskID uint) error {
+func (s *TaskServiceImpl) ArchiveTask(taskID uint) (*models.Task, error) {
 
-	task, err := s.taskRepo.GetTaskByID(taskID)
-
-	if err != nil {
-		return err
-	}
-
-	err = s.taskRepo.ArchiveTask(task)
+	task, err := s.taskRepo.ArchiveTask(taskID)
 
 	if err != nil {
-		return err
+		return nil, err
 	}
-	return nil
+	return task, nil
 }
 
 func (s *TaskServiceImpl) SaveTask(task *models.Task) error {
 	err := s.taskRepo.SaveTask(task)
-
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (s *TaskServiceImpl) DeleteTask(taskID *models.Task) error {
-	err := s.taskRepo.ArchiveTask(taskID)
 
 	if err != nil {
 		return err
@@ -230,8 +224,8 @@ func (s *TaskServiceImpl) RunPhotogrammetryProcess(task *models.Task) error {
 	}
 	CURRENT_TASK = CURRENT_TASK + 1.0
 
-	log.Println("# 3 DensifyPointCloud", "scene.mvs", "-o", "scene_dense.mvs", "-w", mvsPath)    // , "--max-threads", "1")
-	cmd = exec.Command("DensifyPointCloud", "scene.mvs", "-o", "scene_dense.mvs", "-w", mvsPath) // , "--max-threads", "1")
+	log.Println("# 3 DensifyPointCloud", "scene.mvs", "-o", "scene_dense.mvs", "-w", mvsPath, "--max-threads", "1")
+	cmd = exec.Command("DensifyPointCloud", "scene.mvs", "-o", "scene_dense.mvs", "-w", mvsPath, "--max-threads", "1")
 
 	cmd.Stdout = &stdoutBuffer
 	cmd.Stderr = &stdoutBuffer

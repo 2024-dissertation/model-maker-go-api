@@ -49,7 +49,8 @@ type Task struct {
 	UserId       uint
 	Images       []AppFile     `gorm:"foreignKey:TaskId"`
 	Mesh         *AppFile      `gorm:"foreignKey:TaskId"`
-	Metadata     JSONMap       `gorm:"type:json" json:"Metadata"`
+	Metadata     JSONMap       `gorm:"type:json;default:'{}'" json:"Metadata"`
 	ChatMessages []ChatMessage `gorm:"foreignKey:TaskId"`
 	Logs         []TaskLog     `gorm:"foreignKey:TaskId"`
+	Archived     bool          `gorm:"default:false"`
 }

@@ -21,12 +21,12 @@ func TestTaskController(t *testing.T) {
 
 	taskController := controller.NewTaskController(mockTaskService, mockAppFileService, mockVisionService)
 
-	t.Run("GetTasks", func(t *testing.T) {
+	t.Run("GetUnarchivedTasks", func(t *testing.T) {
 		recorder, c := utils.SetupRecorder()
 
 		mockTaskService.On("GetTasks", uint(1)).Return([]*models.Task{}, nil)
 
-		taskController.GetTasks(c)
+		taskController.GetUnarchivedTasks(c)
 
 		assert.Equal(t, http.StatusOK, recorder.Code)
 		assert.JSONEq(t, `{"tasks":[]}`, recorder.Body.String())

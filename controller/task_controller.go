@@ -29,12 +29,30 @@ func NewTaskController(taskService services.TaskService, appFileService services
 	return &TaskController{TaskService: taskService, AppFileService: appFileService, VisionService: visionService}
 }
 
-func (c *TaskController) GetTasks(ctx *gin.Context) {
+func (c *TaskController) GetUnarchivedTasks(ctx *gin.Context) {
 
 	user := ctx.MustGet("user")
 	userId := user.(*model.User).Id
 
-	tasks, err := c.TaskService.GetTasks(userId)
+	tasks, err := c.TaskService.GetUnarchivedTasks(userId)
+	if err != nil {
+		ctx.AbortWithStatusJSON(400, gin.H{"error": err.Error()})
+		return
+	}
+
+	for i := range tasks {
+		c.TaskService.FullyLoadTask(tasks[i])
+	}
+
+	ctx.JSON(200, gin.H{"tasks": tasks})
+}
+
+func (c *TaskController) GetArchivedTasks(ctx *gin.Context) {
+
+	user := ctx.MustGet("user")
+	userId := user.(*model.User).Id
+
+	tasks, err := c.TaskService.GetArchivedTasks(userId)
 	if err != nil {
 		ctx.AbortWithStatusJSON(400, gin.H{"error": err.Error()})
 		return
@@ -374,4 +392,21 @@ func (c *TaskController) SendMessage(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, gin.H{"message": message})
 
+}
+
+func (c *TaskController) ArchiveTask(ctx *gin.Context) {
+	taskId := ctx.Param("taskID")
+	taskIdInt, err := strconv.Atoi(taskId)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid task ID"})
+		return
+	}
+
+	task, err := c.TaskService.ArchiveTask(uint(taskIdInt))
+	if err != nil {
+		ctx.AbortWithStatusJSON(400, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"message": task})
 }

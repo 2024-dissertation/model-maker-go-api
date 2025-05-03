@@ -14,10 +14,23 @@ func NewTaskRepository(db *gorm.DB) TaskRepository {
 	return &TaskRepositoryImpl{DB: db}
 }
 
-func (repo *TaskRepositoryImpl) GetTasksByUser(userID uint) ([]*models.Task, error) {
-	// Fetch tasks related to the user
+func (repo *TaskRepositoryImpl) GetUnarchivedTasks(userID uint) ([]*models.Task, error) {
 	var tasks []*models.Task
-	if err := database.DB.Where("user_id = ?", userID).Find(&tasks).Error; err != nil {
+	if err := database.DB.
+		Where("user_id = ?", userID).
+		Where("archived = ?", false).
+		Find(&tasks).Error; err != nil {
+		return nil, err
+	}
+	return tasks, nil
+}
+
+func (repo *TaskRepositoryImpl) GetArchivedTasks(userID uint) ([]*models.Task, error) {
+	var tasks []*models.Task
+	if err := database.DB.
+		Where("user_id = ?", userID).
+		Where("archived = ?", true).
+		Find(&tasks).Error; err != nil {
 		return nil, err
 	}
 	return tasks, nil
@@ -46,11 +59,18 @@ func (repo *TaskRepositoryImpl) SaveTask(task *models.Task) error {
 	return nil
 }
 
-func (repo *TaskRepositoryImpl) ArchiveTask(task *models.Task) error {
-	if err := database.DB.Delete(task).Error; err != nil {
-		return err
+func (repo *TaskRepositoryImpl) ArchiveTask(taskID uint) (*models.Task, error) {
+	task, err := repo.GetTaskByID(taskID)
+	if err != nil {
+		return nil, err
 	}
-	return nil
+
+	task.Archived = true
+	if err := database.DB.Save(task).Error; err != nil {
+		return nil, err
+	}
+
+	return task, nil
 }
 
 func (repo *TaskRepositoryImpl) AddLog(taskID uint, log string) error {
