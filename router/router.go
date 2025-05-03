@@ -41,7 +41,7 @@ func NewRouter(
 
 	// Tasks (protected by AuthMiddleware)
 	authRequired.GET("/tasks", taskController.GetUnarchivedTasks)
-	authRequired.GET("/archived/tasks", taskController.GetUnarchivedTasks)
+	authRequired.GET("/archived/tasks", taskController.GetArchivedTasks)
 	authRequired.POST("/tasks", taskController.CreateTask)
 	authRequired.PUT("/tasks", taskController.UpdateTask)
 	authRequired.GET("/tasks/:taskID", taskController.GetTask)
