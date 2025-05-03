@@ -101,6 +101,16 @@ func (s *TaskServiceImpl) ArchiveTask(taskID uint) (*models.Task, error) {
 	return task, nil
 }
 
+func (s *TaskServiceImpl) UnarchiveTask(taskID uint) (*models.Task, error) {
+
+	task, err := s.taskRepo.UnarchiveTask(taskID)
+
+	if err != nil {
+		return nil, err
+	}
+	return task, nil
+}
+
 func (s *TaskServiceImpl) SaveTask(task *models.Task) error {
 	err := s.taskRepo.SaveTask(task)
 

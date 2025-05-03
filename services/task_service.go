@@ -11,6 +11,7 @@ type TaskService interface {
 	GetArchivedTasks(userID uint) ([]*model.Task, error)
 	UpdateTask(task *model.Task) error
 	ArchiveTask(taskID uint) (*model.Task, error)
+	UnarchiveTask(taskID uint) (*model.Task, error)
 	SaveTask(task *model.Task) error
 	FailTask(task *model.Task, message string) error
 	RunPhotogrammetryProcess(task *model.Task) error

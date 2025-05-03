@@ -410,3 +410,20 @@ func (c *TaskController) ArchiveTask(ctx *gin.Context) {
 
 	ctx.JSON(http.StatusOK, gin.H{"message": task})
 }
+
+func (c *TaskController) UnarchiveTask(ctx *gin.Context) {
+	taskId := ctx.Param("taskID")
+	taskIdInt, err := strconv.Atoi(taskId)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid task ID"})
+		return
+	}
+
+	task, err := c.TaskService.UnarchiveTask(uint(taskIdInt))
+	if err != nil {
+		ctx.AbortWithStatusJSON(400, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"message": task})
+}

@@ -49,6 +49,7 @@ func NewRouter(
 	authRequired.POST("/tasks/:taskID/start", taskController.StartProcess)
 	authRequired.POST("/tasks/:taskID/message", taskController.SendMessage)
 	authRequired.POST("/tasks/:taskID/archive", taskController.ArchiveTask)
+	authRequired.POST("/tasks/:taskID/unarchive", taskController.UnarchiveTask)
 
 	// Anlytics
 	authRequired.GET("/analytics", userAnalyticsController.GetAnalytics)

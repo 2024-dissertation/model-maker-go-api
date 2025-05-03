@@ -73,6 +73,20 @@ func (repo *TaskRepositoryImpl) ArchiveTask(taskID uint) (*models.Task, error) {
 	return task, nil
 }
 
+func (repo *TaskRepositoryImpl) UnarchiveTask(taskID uint) (*models.Task, error) {
+	task, err := repo.GetTaskByID(taskID)
+	if err != nil {
+		return nil, err
+	}
+
+	task.Archived = false
+	if err := database.DB.Save(task).Error; err != nil {
+		return nil, err
+	}
+
+	return task, nil
+}
+
 func (repo *TaskRepositoryImpl) AddLog(taskID uint, log string) error {
 	task, err := repo.GetTaskByID(taskID)
 	if err != nil {
