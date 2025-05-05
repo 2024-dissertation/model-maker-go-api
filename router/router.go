@@ -21,6 +21,7 @@ func NewRouter(
 	reportsController *controller.ReportsController,
 	collectionsController *controller.CollectionsController,
 	userAnalyticsController *controller.UserAnalyticsController,
+	notificationController *controller.NotificationController,
 ) *gin.Engine {
 
 	r := gin.Default()
@@ -70,6 +71,9 @@ func NewRouter(
 	// Image analysis
 	authRequired.POST("/analyze", visionController.AnalyzeImage)
 	authRequired.POST("/analyze/:taskID", visionController.AnalyzeTask)
+
+	// Debug
+	authRequired.POST("/debug/notification", notificationController.SendMessage)
 
 	// Unauthenticated routes
 	r.POST("/uploads", uploadController.UploadFile)

@@ -15,9 +15,10 @@ import (
 )
 
 type TaskServiceImpl struct {
-	taskRepo       repositories.TaskRepository
-	appFileService AppFileService
-	chatRepository repositories.ChatRepository
+	taskRepo            repositories.TaskRepository
+	appFileService      AppFileService
+	chatRepository      repositories.ChatRepository
+	notificationService NotificationService
 }
 
 type saveOutput struct {
@@ -29,8 +30,8 @@ func (so *saveOutput) Write(p []byte) (n int, err error) {
 	return os.Stdout.Write(p)
 }
 
-func NewTaskService(taskRepo repositories.TaskRepository, appFileService AppFileService, chatRepository repositories.ChatRepository) TaskService {
-	return &TaskServiceImpl{taskRepo: taskRepo, appFileService: appFileService, chatRepository: chatRepository}
+func NewTaskService(taskRepo repositories.TaskRepository, appFileService AppFileService, chatRepository repositories.ChatRepository, notificationService NotificationService) TaskService {
+	return &TaskServiceImpl{taskRepo: taskRepo, appFileService: appFileService, chatRepository: chatRepository, notificationService: notificationService}
 }
 
 func (s *TaskServiceImpl) CreateTask(task *models.Task) error {
@@ -132,6 +133,12 @@ func (s *TaskServiceImpl) FailTask(task *models.Task, message string) error {
 
 	log.Printf("Task %d failed: %s\n", task.ID, message)
 
+	s.notificationService.SendMessage(&models.Notification{
+		UserID:  task.UserId,
+		Message: "Task failed",
+		Title:   task.Title,
+	})
+
 	return nil
 }
 
@@ -208,6 +215,12 @@ func (s *TaskServiceImpl) RunPhotogrammetryProcess(task *models.Task) error {
 	}
 	CURRENT_TASK = CURRENT_TASK + 1.0
 
+	s.notificationService.SendMessage(&models.Notification{
+		UserID:  task.UserId,
+		Message: task.Title + " - Processing started",
+		Title:   task.Title,
+	})
+
 	log.Println("# 2 openMVG_main_openMVG2openMVS", "-i", filepath.Join(outputPath, "reconstruction_sequential/sfm_data.bin"), "-o", filepath.Join(mvsPath, "scene.mvs"), inputPath, outputPath, "-d", mvsPath)
 	cmd = exec.Command("openMVG_main_openMVG2openMVS", "-i", filepath.Join(outputPath, "reconstruction_sequential/sfm_data.bin"), "-o", filepath.Join(mvsPath, "scene.mvs"), inputPath, outputPath, "-d", mvsPath)
 
@@ -234,6 +247,12 @@ func (s *TaskServiceImpl) RunPhotogrammetryProcess(task *models.Task) error {
 	}
 	CURRENT_TASK = CURRENT_TASK + 1.0
 
+	s.notificationService.SendMessage(&models.Notification{
+		UserID:  task.UserId,
+		Message: "Step 2/7 started",
+		Title:   task.Title,
+	})
+
 	log.Println("# 3 DensifyPointCloud", "scene.mvs", "-o", "scene_dense.mvs", "-w", mvsPath, "--max-threads", "1")
 	cmd = exec.Command("DensifyPointCloud", "scene.mvs", "-o", "scene_dense.mvs", "-w", mvsPath, "--max-threads", "1")
 
@@ -258,6 +277,12 @@ func (s *TaskServiceImpl) RunPhotogrammetryProcess(task *models.Task) error {
 		return err
 	}
 	CURRENT_TASK = CURRENT_TASK + 1.0
+
+	s.notificationService.SendMessage(&models.Notification{
+		UserID:  task.UserId,
+		Message: "Step 3/7 started",
+		Title:   task.Title,
+	})
 
 	log.Println("# 4 ReconstructMesh", "scene_dense.mvs", "-o", "scene_mesh.ply", "-w", mvsPath)
 	cmd = exec.Command("ReconstructMesh", "scene_dense.mvs", "-o", "scene_mesh.ply", "-w", mvsPath)
@@ -287,8 +312,14 @@ func (s *TaskServiceImpl) RunPhotogrammetryProcess(task *models.Task) error {
 	}
 	CURRENT_TASK = CURRENT_TASK + 1.0
 
-	log.Println("# 5 RefineMesh", "scene.mvs", "-m", "scene_mesh.ply", "-o", "scene_dense_mesh_refine.mvs", "-w", mvsPath, "--scales", "1", "--max-face-area", "16")    // , "--max-threads", "1")
-	cmd = exec.Command("RefineMesh", "scene.mvs", "-m", "scene_mesh.ply", "-o", "scene_dense_mesh_refine.mvs", "-w", mvsPath, "--scales", "1", "--max-face-area", "16") // , "--max-threads", "1")
+	s.notificationService.SendMessage(&models.Notification{
+		UserID:  task.UserId,
+		Message: "Step 4/7 started",
+		Title:   task.Title,
+	})
+
+	log.Println("# 5 RefineMesh", "scene.mvs", "-m", "scene_mesh.ply", "-o", "scene_dense_mesh_refine.mvs", "-w", mvsPath, "--scales", "1", "--max-face-area", "16", "--max-threads", "1")
+	cmd = exec.Command("RefineMesh", "scene.mvs", "-m", "scene_mesh.ply", "-o", "scene_dense_mesh_refine.mvs", "-w", mvsPath, "--scales", "1", "--max-face-area", "16", "--max-threads", "1")
 
 	cmd.Stdout = &stdoutBuffer
 	cmd.Stderr = &stdoutBuffer
@@ -316,6 +347,12 @@ func (s *TaskServiceImpl) RunPhotogrammetryProcess(task *models.Task) error {
 	}
 	CURRENT_TASK = CURRENT_TASK + 1.0
 
+	s.notificationService.SendMessage(&models.Notification{
+		UserID:  task.UserId,
+		Message: "Step 5/7 started",
+		Title:   task.Title,
+	})
+
 	log.Println("# 6 TextureMesh", "scene_dense.mvs", "-m", "scene_dense_mesh_refine.ply", "-o", "scene_dense_mesh_refine_texture.mvs", "-w", mvsPath, "--export-type", "obj")
 	cmd = exec.Command("TextureMesh", "scene_dense.mvs", "-m", "scene_dense_mesh_refine.ply", "-o", "scene_dense_mesh_refine_texture.mvs", "-w", mvsPath, "--export-type", "obj")
 
@@ -334,6 +371,9 @@ func (s *TaskServiceImpl) RunPhotogrammetryProcess(task *models.Task) error {
 	}
 
 	// 7
+
+	CURRENT_TASK = CURRENT_TASK + 1.0
+
 	log.Println("Updating meta for task:", task.ID, " - ", CURRENT_TASK, "/", TASK_COUNT)
 	if err := s.UpdateMeta(task, "opensfm-process", (CURRENT_TASK/TASK_COUNT)*100.0); err != nil {
 		log.Printf("Failed to update meta: %f: %v\n", CURRENT_TASK, err)
@@ -343,6 +383,12 @@ func (s *TaskServiceImpl) RunPhotogrammetryProcess(task *models.Task) error {
 	if err := s.AddLog(task.ID, "MeshConversion started"); err != nil {
 		log.Printf("Failed to add log: %v\n", err)
 	}
+
+	s.notificationService.SendMessage(&models.Notification{
+		UserID:  task.UserId,
+		Message: "Step 6/7 started",
+		Title:   task.Title,
+	})
 
 	fileName := filepath.Join(mvsPath, "final_model")
 	fmt.Println("blender", "-b", "-P", "./bin/convert_obj_to_glb.py", "--", filepath.Join(mvsPath, "scene_dense_mesh_refine_texture.obj"), fileName)
@@ -382,6 +428,12 @@ func (s *TaskServiceImpl) RunPhotogrammetryProcess(task *models.Task) error {
 		s.FailTask(task, fmt.Sprintf("Failed to update task: %v", err))
 		return err
 	}
+
+	s.notificationService.SendMessage(&models.Notification{
+		UserID:  task.UserId,
+		Message: "Step Scan finished",
+		Title:   task.Title,
+	})
 
 	log.Println("Task updated successfully.")
 	log.Printf("Processing completed in %s\n", time.Since(startTime))

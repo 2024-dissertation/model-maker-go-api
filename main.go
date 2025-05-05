@@ -48,8 +48,9 @@ func main() {
 	// Set up the authentication service
 	authService := services.NewAuthService(authClient, db.DB, userRepo)
 	userService := services.NewUserService(userRepo)
+	notificationService := services.NewNotificationService()
 	appFileService := services.NewAppFileServiceFile(appFileRepo)
-	taskService := services.NewTaskService(taskRepo, appFileService, chatRepo)
+	taskService := services.NewTaskService(taskRepo, appFileService, chatRepo, notificationService)
 	visionService := services.NewVisionService()
 	reportsService := services.NewReportsService(reportsRepo)
 	collectionsService := services.NewCollectionsService(collectionsRepo)
@@ -63,9 +64,10 @@ func main() {
 	reportsController := controller.NewReportsController(reportsService)
 	collectionsController := controller.NewCollectionsController(collectionsService)
 	userAnalyticsController := controller.NewUserAnalyticsController(userAnalyticsService)
+	notificationController := controller.NewNotificationController(notificationService)
 
 	// Set up the HTTP router
-	r := router.NewRouter(authController, taskController, uploadController, objectController, visionController, authService, reportsController, collectionsController, userAnalyticsController)
+	r := router.NewRouter(authController, taskController, uploadController, objectController, visionController, authService, reportsController, collectionsController, userAnalyticsController, notificationController)
 
 	// Start the server
 	if r.Run(":"+os.Getenv("PORT")) != nil {
