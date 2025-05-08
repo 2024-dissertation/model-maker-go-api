@@ -29,14 +29,14 @@ func TestReportsRepository(t *testing.T) {
 
 	err = userRepo.Create(user)
 	assert.NoError(t, err)
-	assert.NotZero(t, user.Id)
+	assert.NotZero(t, user.Model.ID)
 
 	// Test Create
 	report := &model.Report{
 		Title:      "test_report",
 		Rating:     5,
 		Body:       "test_body",
-		UserID:     user.Id,
+		UserID:     user.Model.ID,
 		ReportType: "BUG",
 	}
 

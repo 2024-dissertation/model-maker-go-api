@@ -8,6 +8,7 @@ import (
 	models "github.com/Soup666/diss-api/model"
 	"github.com/Soup666/diss-api/services"
 	"github.com/stretchr/testify/assert"
+	"gorm.io/gorm"
 )
 
 func TestUserService(t *testing.T) {
@@ -17,7 +18,7 @@ func TestUserService(t *testing.T) {
 	t.Run("GetUserFromFirebaseUID", func(t *testing.T) {
 		apiKey := "valid_api_key"
 		expectedUser := &models.User{
-			Id:          1,
+			Model:       gorm.Model{ID: 1},
 			Email:       "example@example.com",
 			FirebaseUid: "valid_api_key",
 		}
@@ -33,13 +34,13 @@ func TestUserService(t *testing.T) {
 
 		assert.NoError(t, err)
 		assert.NotNil(t, fetchedUser)
-		assert.Equal(t, expectedUser.Id, fetchedUser.Id)
+		assert.Equal(t, expectedUser.ID, fetchedUser.ID)
 		assert.Equal(t, expectedUser.Email, fetchedUser.Email)
 	})
 
 	t.Run("UpdateUser", func(t *testing.T) {
 		user := &models.User{
-			Id:          1,
+			Model:       gorm.Model{ID: 1},
 			Email:       "example@example.com",
 			FirebaseUid: "valid_api_key",
 		}
@@ -47,14 +48,14 @@ func TestUserService(t *testing.T) {
 		mockUserRepository.On("UpdateUser", user).Return(nil)
 		mockUserRepository.On("UpdateUser", nil).Return(errors.New("error"))
 		mockUserRepository.On("UpdateUser", &models.User{}).Return(errors.New("error"))
-		mockUserRepository.On("UpdateUser", &models.User{Id: 1}).Return(nil)
+		mockUserRepository.On("UpdateUser", &models.User{Model: gorm.Model{ID: 1}}).Return(nil)
 
 		err := userService.UpdateUser(user)
 
 		mockUserRepository.AssertCalled(t, "UpdateUser", user)
 		assert.NoError(t, err)
 		assert.NotNil(t, user)
-		assert.NotNil(t, user.Id)
+		assert.NotNil(t, user.ID)
 		assert.Equal(t, user.Email, "example@example.com")
 	})
 }

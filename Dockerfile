@@ -21,7 +21,8 @@ RUN git clone --depth=1 https://github.com/cdcseacave/VCG.git /vcglib
 RUN git clone --recursive https://github.com/openMVG/openMVG.git /openMVG && \
     mkdir -p /openMVG_build && cd /openMVG_build && \
     cmake -DCMAKE_BUILD_TYPE=RELEASE /openMVG/src && \
-    make -j$(nproc)
+    make
+    # make -j$(nproc)
 
 RUN git clone --branch develop https://github.com/cdcseacave/openMVS.git /openMVS && \
     sed -i 's|<CGAL/AABB_traits_3.h>|<CGAL/AABB_tree.h>|g' /openMVS/libs/MVS/SceneReconstruct.cpp && \
@@ -31,7 +32,8 @@ RUN git clone --branch develop https://github.com/cdcseacave/openMVS.git /openMV
             -DOpenMVG_DIR=/openMVG_build/src/openMVG/cmake/ \
             -DVCG_ROOT=/vcglib \
             /openMVS && \
-    make -j$(nproc)    
+    make
+    # make -j$(nproc)    
 
 # -------------------------
 # Stage 2: Build Go backend

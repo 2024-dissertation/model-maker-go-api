@@ -33,7 +33,7 @@ func TestUserRepository(t *testing.T) {
 	}
 	err = repo.Create(user)
 	assert.NoError(t, err)
-	assert.NotZero(t, user.Id)
+	assert.NotZero(t, user.Model.ID)
 
 	// Test GetUserFromFirebaseUID
 	fetchedUser, err := repo.GetUserFromFirebaseUID("test_firebase_uid")

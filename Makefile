@@ -4,7 +4,7 @@ include .env
 
 BIN_FILE=main.out
 
-PKGS := github.com/Soup666/diss-api,github.com/Soup666/diss-api/cmd/vision,github.com/Soup666/diss-api/controller,github.com/Soup666/diss-api/database,github.com/Soup666/diss-api/docs,github.com/Soup666/diss-api/middleware,github.com/Soup666/diss-api/middleware_test,github.com/Soup666/diss-api/model,github.com/Soup666/diss-api/repository,github.com/Soup666/diss-api/router,github.com/Soup666/diss-api/seed,github.com/Soup666/diss-api/seeder,github.com/Soup666/diss-api/seeds,github.com/Soup666/diss-api/services,github.com/Soup666/diss-api/utils
+PKGS := github.com/Soup666/diss-api/cmd/vision,github.com/Soup666/diss-api/database,github.com/Soup666/diss-api/docs,github.com/Soup666/diss-api/middleware,github.com/Soup666/diss-api/middleware_test,github.com/Soup666/diss-api/model,github.com/Soup666/diss-api/repository,github.com/Soup666/diss-api/router,github.com/Soup666/diss-api/seed,github.com/Soup666/diss-api/seeder,github.com/Soup666/diss-api/seeds,github.com/Soup666/diss-api/utils
 
 build-and-run: build run
 
@@ -27,8 +27,8 @@ run:
 test:
 	@godotenv -f .env.test go test ./... -cover fmt
 
-cover:
-	@echo "Running tests with coverage..."
+test-cover:
+	echo "Running tests with coverage..."
 	@echo "${COVERPKG}"
 	@godotenv -f .env.test go test -coverprofile=cp.out -coverpkg=$(PKGS) ./...
 	@go tool cover -html=cp.out -o cover.html

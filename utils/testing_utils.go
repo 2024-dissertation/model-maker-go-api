@@ -8,13 +8,14 @@ import (
 
 	"github.com/Soup666/diss-api/model"
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 func SetupRecorder() (*httptest.ResponseRecorder, *gin.Context) {
 	recorder := httptest.NewRecorder()
 
 	c, _ := gin.CreateTestContext(recorder)
-	c.Set("user", &model.User{Id: 1})
+	c.Set("user", &model.User{Model: gorm.Model{ID: 1}})
 
 	return recorder, c
 }

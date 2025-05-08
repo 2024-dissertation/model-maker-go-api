@@ -18,6 +18,14 @@ func (m *MockTaskService) CreateTask(task *models.Task) error {
 	return nil
 }
 
+func (m *MockTaskService) UnarchiveTask(taskID uint) (*models.Task, error) {
+	args := m.Called(taskID)
+	if args.Get(0) != nil {
+		return args.Get(0).(*models.Task), args.Error(1)
+	}
+	return nil, args.Error(1)
+}
+
 func (m *MockTaskService) GetUnarchivedTasks(taskID uint) ([]*models.Task, error) {
 	args := m.Called(taskID)
 	if args.Get(0) != nil {

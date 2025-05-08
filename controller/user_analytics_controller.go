@@ -17,7 +17,7 @@ func NewUserAnalyticsController(userAnalyticsService services.UserAnalyticsServi
 func (c *UserAnalyticsController) GetAnalytics(ctx *gin.Context) {
 
 	user := ctx.MustGet("user")
-	userID := user.(*model.User).Id
+	userID := user.(*model.User).Model.ID
 
 	analytics, err := c.userAnalyticsService.GetAnalytics(userID)
 	if err != nil {

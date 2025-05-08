@@ -19,6 +19,15 @@ func (m *MockTaskRepository) GetArchivedTasks(userID uint) ([]*models.Task, erro
 	return nil, args.Error(1)
 }
 
+func (m *MockTaskRepository) UnarchiveTask(taskID uint) (*models.Task, error) {
+	args := m.Called(taskID)
+
+	if args.Get(0) != nil {
+		return args.Get(0).(*models.Task), args.Error(1)
+	}
+	return nil, args.Error(1)
+}
+
 func (m *MockTaskRepository) GetUnarchivedTasks(userID uint) ([]*models.Task, error) {
 	args := m.Called(userID)
 

@@ -21,7 +21,7 @@ func (c *ReportsController) GetReports(ctx *gin.Context) {
 
 	user := ctx.MustGet("user").(*model.User)
 
-	reports, err := c.reportsService.GetReports(uint(user.Id))
+	reports, err := c.reportsService.GetReports(uint(user.Model.ID))
 	if err != nil {
 		ctx.AbortWithStatusJSON(400, gin.H{"error": err.Error()})
 		return
@@ -58,7 +58,7 @@ func (c *ReportsController) CreateReport(ctx *gin.Context) {
 	}
 
 	user := ctx.MustGet("user").(*model.User)
-	report.UserID = user.Id
+	report.UserID = user.Model.ID
 
 	err := c.reportsService.CreateReport(report)
 	if err != nil {

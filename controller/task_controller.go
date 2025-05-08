@@ -32,7 +32,7 @@ func NewTaskController(taskService services.TaskService, appFileService services
 func (c *TaskController) GetUnarchivedTasks(ctx *gin.Context) {
 
 	user := ctx.MustGet("user")
-	userId := user.(*model.User).Id
+	userId := user.(*model.User).Model.ID
 
 	tasks, err := c.TaskService.GetUnarchivedTasks(userId)
 	if err != nil {
@@ -50,7 +50,7 @@ func (c *TaskController) GetUnarchivedTasks(ctx *gin.Context) {
 func (c *TaskController) GetArchivedTasks(ctx *gin.Context) {
 
 	user := ctx.MustGet("user")
-	userId := user.(*model.User).Id
+	userId := user.(*model.User).Model.ID
 
 	tasks, err := c.TaskService.GetArchivedTasks(userId)
 	if err != nil {
@@ -105,7 +105,7 @@ func (c *TaskController) CreateTask(ctx *gin.Context) {
 	task := &model.Task{
 		Title:       "",
 		Description: "", // Overriden by ai-description
-		UserId:      user.Id,
+		UserId:      user.Model.ID,
 		Completed:   false,
 		Status:      "INITIAL",
 	}
@@ -320,7 +320,7 @@ func (c *TaskController) UpdateTask(ctx *gin.Context) {
 	}
 
 	user := ctx.MustGet("user").(*model.User)
-	task.UserId = user.Id
+	task.UserId = user.Model.ID
 
 	err := c.TaskService.UpdateTask(task)
 	if err != nil {
