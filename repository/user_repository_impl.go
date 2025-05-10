@@ -40,3 +40,7 @@ func (repo *UserRepositoryImpl) GetUsers() ([]*models.User, error) {
 	}
 	return users, nil
 }
+
+func (repo *UserRepositoryImpl) DeleteUser(user *models.User) error {
+	return repo.DB.Delete(&user).Error
+}

@@ -9,4 +9,5 @@ type UserRepository interface {
 	Create(user *models.User) error
 	UpdateUser(user *models.User) error
 	GetUsers() ([]*models.User, error)
+	DeleteUser(user *models.User) error
 }

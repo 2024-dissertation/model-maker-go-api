@@ -45,3 +45,12 @@ func (m *MockUserRepository) GetUsers() ([]*models.User, error) {
 	}
 	return nil, args.Error(1)
 }
+
+func (m *MockUserRepository) DeleteUser(user *models.User) error {
+	args := m.Called(user)
+
+	if args.Get(0) != nil {
+		return args.Error(0)
+	}
+	return nil
+}

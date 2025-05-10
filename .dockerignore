@@ -9,7 +9,8 @@ yarn-debug.log*
 yarn-error.log*
 
 # Ignore environment files
-.env.*.local
+.env
+.env.*
 
 # Ignore build output
 dist

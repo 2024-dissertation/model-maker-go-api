@@ -40,6 +40,8 @@ func NewRouter(
 	authRequired.POST("/verify", authController.Verify)
 	authRequired.PATCH("/verify", authController.Verify)
 
+	authRequired.POST("/unverify", authController.Unverify)
+
 	// Tasks (protected by AuthMiddleware)
 	authRequired.GET("/tasks", taskController.GetUnarchivedTasks)
 	authRequired.GET("/archived/tasks", taskController.GetArchivedTasks)

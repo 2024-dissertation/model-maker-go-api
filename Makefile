@@ -1,5 +1,3 @@
-include .env
-
 .DEFAULT_GOAL := build-and-run
 
 BIN_FILE=main.out

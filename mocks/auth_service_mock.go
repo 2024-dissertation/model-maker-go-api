@@ -30,3 +30,9 @@ func (m *MockAuthService) Verify(token string) (*models.User, error) {
 	}
 	return nil, args.Error(1)
 }
+
+// Unverify mocks the user unverification method.
+func (m *MockAuthService) Unverify(user *models.User) error {
+	args := m.Called(user)
+	return args.Error(0)
+}

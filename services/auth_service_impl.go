@@ -55,3 +55,12 @@ func (s *AuthServiceImpl) Verify(token string) (*model.User, error) {
 
 	return user, nil
 }
+
+func (s *AuthServiceImpl) Unverify(user *model.User) error {
+	err := s.userRepo.DeleteUser(user)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
