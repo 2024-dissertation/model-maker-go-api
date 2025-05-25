@@ -50,7 +50,6 @@ RUN apt-get update && apt-get install -y wget xz-utils libcgal-qt5-dev \
     rm -rf go1.23.8.linux-amd64.tar.gz && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /app
 COPY . .
 
 # RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o server
